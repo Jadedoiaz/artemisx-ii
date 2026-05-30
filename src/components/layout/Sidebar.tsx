@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useWallet } from '@solana/wallet-adapter-react';
 import {
   LayoutDashboard,
   Zap,
@@ -7,6 +8,7 @@ import {
   BarChart3,
   Settings,
 } from 'lucide-react';
+import { formatAddress } from '../../lib/utils';
 import { cn } from '../../lib/utils';
 
 const navItems = [
@@ -19,6 +21,8 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const { publicKey, connected } = useWallet();
+
   return (
     <aside className="w-64 h-screen bg-surface border-r border-border flex flex-col fixed left-0 top-0 z-50">
       <div className="p-6 border-b border-border">
@@ -27,6 +31,19 @@ export default function Sidebar() {
         </h1>
         <p className="text-xs text-muted mt-1">Multi-Chain Bump Suite</p>
       </div>
+
+      {connected && publicKey && (
+        <div className="px-4 py-3 border-b border-border bg-surface-highlight/50">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-xs text-muted">Connected</span>
+          </div>
+          <p className="text-xs font-mono text-accent mt-1 truncate">
+            {formatAddress(publicKey.toBase58())}
+          </p>
+        </div>
+      )}
+
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => (
           <NavLink

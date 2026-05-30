@@ -1,12 +1,12 @@
-import { Bell, Wallet as WalletIcon } from 'lucide-react';
-import { useWalletStore } from '../../stores/walletStore';
+import { Bell } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import WalletConnectButton from '../wallet/WalletConnectButton';
 
 export default function Header() {
-  const wallets = useWalletStore((s) => s.wallets);
-  const connected = wallets.filter((w) => w.connected).length;
+  const { connected } = useWallet();
 
   return (
-    <header className="h-16 bg-surface/80 backdrop-blur border-b border-border flex items-center justify-between px-8 sticky top-0 z-40">
+    <header className="h-16 bg-surface/80 backdrop-blur border-b border-border flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
         <h2 className="text-lg font-semibold">Dashboard</h2>
       </div>
@@ -15,12 +15,7 @@ export default function Header() {
           <Bell size={20} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />
         </button>
-        <div className="flex items-center gap-2 px-4 py-2 bg-surface-highlight rounded-lg">
-          <WalletIcon size={16} className="text-accent" />
-          <span className="text-sm font-medium">
-            {connected} Connected
-          </span>
-        </div>
+        <WalletConnectButton />
       </div>
     </header>
   );

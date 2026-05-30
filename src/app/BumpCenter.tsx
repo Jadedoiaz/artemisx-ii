@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useBumpStore } from '../stores/bumpStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { Play, Pause, Zap } from 'lucide-react';
+import { useBumpEngine } from '../hooks/useBumpEngine';
+import { useWalletData } from '../hooks/useWalletData';
+import { Play, Pause, Zap, Wallet } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const CHAINS = [
@@ -20,12 +20,19 @@ export default function BumpCenter() {
   const [activeChain, setActiveChain] = useState('solana');
   const [amount, setAmount] = useState('0.001');
   const [interval, setInterval] = useState('5');
-  const { isBumping, setBumping, presets, addPreset, activeChain: storedChain, setActiveChain: setStoredChain } = useBumpStore();
-  const { maxBumpAmount, cooldownMs } = useSettingsStore();
+  const { connected } = useWalletData();
+  const { sendBump, startAutoBump, stopAutoBump, isBumping } = useBumpEngine();
 
-  const handleChainChange = (chainId: string) => {
-    setActiveChain(chainId);
-    setStoredChain(chainId);
+  const handleStart = () => {
+    if (isBumping) {
+      stopAutoBump();
+    } else {
+      startAutoBump(parseFloat(amount), parseInt(interval));
+    }
+  };
+
+  const handleManualBump = () => {
+    sendBump(parseFloat(amount));
   };
 
   return (
@@ -35,11 +42,18 @@ export default function BumpCenter() {
         <p className="text-muted mt-1">Configure and execute bump transactions</p>
       </div>
 
+      {!connected && (
+        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-center gap-3 text-warning">
+          <Wallet size={20} />
+          <span className="text-sm">Connect your wallet to start bumping</span>
+        </div>
+      )}
+
       <div className="flex gap-2 flex-wrap">
         {CHAINS.map((chain) => (
           <button
             key={chain.id}
-            onClick={() => handleChainChange(chain.id)}
+            onClick={() => setActiveChain(chain.id)}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg border text-sm font-medium transition-all',
               activeChain === chain.id
@@ -81,7 +95,7 @@ export default function BumpCenter() {
               value={interval}
               onChange={(e) => setInterval(e.target.value)}
               className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-              min={Math.ceil(cooldownMs / 1000)}
+              min="1"
             />
           </div>
 
@@ -103,41 +117,57 @@ export default function BumpCenter() {
             </div>
           </div>
 
-          <button
-            onClick={() => setBumping(!isBumping)}
-            className={cn(
-              'w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all',
-              isBumping
-                ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20'
-                : 'bg-accent text-white hover:bg-accent-hover'
-            )}
-          >
-            {isBumping ? <Pause size={18} /> : <Play size={18} />}
-            {isBumping ? 'Stop Bumping' : 'Start Bumping'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleManualBump}
+              disabled={!connected || isBumping}
+              className="flex-1 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all bg-surface-highlight border border-border hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Zap size={18} />
+              Manual Bump
+            </button>
+            <button
+              onClick={handleStart}
+              disabled={!connected}
+              className={cn(
+                'flex-1 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all',
+                isBumping
+                  ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20'
+                  : 'bg-accent text-white hover:bg-accent-hover'
+              )}
+            >
+              {isBumping ? <Pause size={18} /> : <Play size={18} />}
+              {isBumping ? 'Stop Auto-Bump' : 'Start Auto-Bump'}
+            </button>
+          </div>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <h3 className="font-semibold">Safety Controls</h3>
-
+          <h3 className="font-semibold">Status</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted">Max Amount</span>
-              <span className="font-mono">{maxBumpAmount} lamports</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted">Cooldown</span>
-              <span className="font-mono">{cooldownMs}ms</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted">Status</span>
-              <span className={isBumping ? 'text-success' : 'text-muted'}>
-                {isBumping ? 'Active' : 'Idle'}
+              <span className="text-muted">Wallet</span>
+              <span className={connected ? 'text-success' : 'text-muted'}>
+                {connected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Active Chain</span>
               <span className="capitalize">{activeChain}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Auto-Bump</span>
+              <span className={isBumping ? 'text-success' : 'text-muted'}>
+                {isBumping ? 'Running' : 'Stopped'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Amount</span>
+              <span className="font-mono">{amount} SOL</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Interval</span>
+              <span className="font-mono">{interval}s</span>
             </div>
           </div>
         </div>

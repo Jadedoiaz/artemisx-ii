@@ -21,3 +21,35 @@
     background: #334155;
   }
 }
+
+/* Solana Wallet Adapter UI Overrides */
+.wallet-adapter-modal-wrapper {
+  background: #12121a !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 12px !important;
+}
+.wallet-adapter-modal-title {
+  color: #f1f5f9 !important;
+}
+.wallet-adapter-modal-list {
+  background: #12121a !important;
+}
+.wallet-adapter-modal-list-more {
+  color: #64748b !important;
+}
+.wallet-adapter-modal-list-more:hover {
+  color: #f1f5f9 !important;
+}
+.wallet-adapter-dropdown-list {
+  background: #12121a !important;
+  border: 1px solid #1e293b !important;
+}
+.wallet-adapter-dropdown-list-item {
+  color: #f1f5f9 !important;
+}
+.wallet-adapter-dropdown-list-item:hover {
+  background: #1a1a2e !important;
+}
+.wallet-adapter-button {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
