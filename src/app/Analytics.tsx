@@ -1,6 +1,6 @@
 import { useBumpStore } from '../stores/bumpStore';
 import { useEffect, useState } from 'react';
-import ActivityHeatmap from '../../components/analytics/ActivityHeatmap';
+import ActivityHeatmap from '../components/analytics/ActivityHeatmap';
 
 const weeklyData = [
   { day: 'Mon', bumps: 12 },
