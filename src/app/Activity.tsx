@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { useBumpStore } from '../stores/bumpStore';
-import { CheckCircle, XCircle, Clock, ExternalLink, RefreshCw, Wallet, Filter } from 'lucide-react';
+import { transactionsToCSV, downloadCSV } from '../lib/export';
+import { CheckCircle, XCircle, Clock, ExternalLink, RefreshCw, Wallet, Filter, Download } from 'lucide-react';
 import { formatTime, shortenTx } from '../lib/utils';
 import { openExternal } from '../lib/tauri';
 import { cn } from '../lib/utils';
@@ -37,9 +38,8 @@ export default function Activity() {
 
   const anyConnected = solanaConnected || evmConnected;
 
-  // Merge bump transactions with Helius history
-  const allTransactions: ActivityTransaction[] = [
-    ...bumpTxs.map(tx => ({
+  const allTransactions: ActivityTransaction[] = useMemo(() => {
+    const bumps = bumpTxs.map(tx => ({
       signature: tx.txId || tx.id,
       timestamp: tx.timestamp,
       type: 'bump' as ParsedTransaction['type'],
@@ -51,13 +51,21 @@ export default function Activity() {
       fee: 0,
       status: tx.status as ParsedTransaction['status'],
       source: 'bump' as const,
-    })),
-    ...heliusTxs.map(tx => ({ ...tx, source: 'helius' as const })),
-  ].sort((a, b) => b.timestamp - a.timestamp);
+    }));
+
+    return [...bumps, ...heliusTxs.map(tx => ({ ...tx, source: 'helius' as const }))]
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }, [bumpTxs, heliusTxs]);
 
   const filtered = filter === 'all' 
     ? allTransactions 
     : allTransactions.filter(tx => tx.type === filter || (filter === 'bump' && tx.source === 'bump'));
+
+  const handleExport = () => {
+    const csv = transactionsToCSV(bumpTxs, heliusTxs);
+    const now = new Date().toISOString().split('T')[0];
+    downloadCSV(csv, `artemisx-transactions-${now}.csv`);
+  };
 
   return (
     <div className="space-y-6">
@@ -67,6 +75,15 @@ export default function Activity() {
           <p className="text-muted mt-1">Transaction history across all chains</p>
         </div>
         <div className="flex items-center gap-3">
+          {allTransactions.length > 0 && (
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border rounded-lg text-sm hover:border-accent transition-colors"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
+          )}
           {solanaConnected && (
             <button
               onClick={refetch}
