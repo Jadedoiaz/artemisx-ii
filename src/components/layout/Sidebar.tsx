@@ -9,6 +9,7 @@ import {
   Activity,
   BarChart3,
   Settings,
+  Image,
 } from 'lucide-react';
 import { formatAddress } from '../../lib/utils';
 import { cn } from '../../lib/utils';
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/bump', icon: Zap, label: 'Bump Center' },
   { to: '/portfolio', icon: Wallet, label: 'Portfolio' },
+  { to: '/nfts', icon: Image, label: 'NFT Gallery' },
   { to: '/activity', icon: Activity, label: 'Activity' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/settings', icon: Settings, label: 'Settings' },
@@ -25,7 +27,7 @@ const navItems = [
 export default function Sidebar() {
   const { publicKey, connected: solanaConnected } = useWallet();
   const { address: evmAddress, isConnected: evmConnected } = useAccount();
-  const activeChain = useBumpStore((s) => s.activeChain);
+  const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
   const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
   const showWallet = isEVM ? evmConnected : solanaConnected;
@@ -74,7 +76,7 @@ export default function Sidebar() {
       </nav>
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted text-center">
-          v2.2.0 Extended
+          v2.3.0 Extended
         </div>
       </div>
     </aside>

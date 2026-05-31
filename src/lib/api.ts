@@ -191,3 +191,95 @@ function classifyTransaction(tx: any): ParsedTransaction['type'] {
   if (tx.nativeTransfers?.length > 0) return 'transfer';
   return 'unknown';
 }
+
+
+import { ParsedTransaction } from './api';
+
+export interface NFTAsset {
+  mint: string;
+  name: string;
+  image: string;
+  collection: string;
+  attributes: Array<{ trait_type: string; value: string }>;
+  floorPrice?: number;
+  listed?: boolean;
+  marketplace?: string;
+}
+
+export interface NFTCollection {
+  name: string;
+  symbol: string;
+  image: string;
+  count: number;
+  floorPrice?: number;
+}
+
+const HELIUS_API = 'https://mainnet.helius-rpc.com';
+
+export async function fetchNFTsByOwner(
+  address: string,
+  apiKey: string
+): Promise<NFTAsset[]> {
+  try {
+    const response = await fetch(`${HELIUS_API}/?api-key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getAssetsByOwner',
+        params: {
+          ownerAddress: address,
+          page: 1,
+          limit: 100,
+        },
+      }),
+    });
+
+    if (!response.ok) throw new Error('Helius API error');
+    const data = await response.json();
+
+    const items = data.result?.items || [];
+
+    return items
+      .filter((item: any) => item.interface === 'V1_NFT' || item.interface === 'V2_NFT')
+      .map((item: any) => ({
+        mint: item.id,
+        name: item.content?.metadata?.name || 'Unnamed NFT',
+        image: item.content?.files?.[0]?.uri || item.content?.links?.image || '',
+        collection: item.grouping?.[0]?.collection_metadata?.name || 'Unknown Collection',
+        attributes: item.content?.metadata?.attributes || [],
+        floorPrice: item.floorPrice,
+        listed: item.listing?.price > 0,
+        marketplace: item.listing?.marketplace,
+      }));
+  } catch (err) {
+    console.error('NFT fetch failed:', err);
+    return [];
+  }
+}
+
+export async function fetchNFTCollections(
+  address: string,
+  apiKey: string
+): Promise<NFTCollection[]> {
+  const nfts = await fetchNFTsByOwner(address, apiKey);
+
+  const collectionMap = new Map<string, NFTCollection>();
+
+  nfts.forEach((nft) => {
+    const existing = collectionMap.get(nft.collection);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      collectionMap.set(nft.collection, {
+        name: nft.collection,
+        symbol: nft.collection.slice(0, 4).toUpperCase(),
+        image: nft.image,
+        count: 1,
+      });
+    }
+  });
+
+  return Array.from(collectionMap.values());
+}
