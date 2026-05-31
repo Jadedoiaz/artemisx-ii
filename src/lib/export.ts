@@ -16,9 +16,8 @@ export interface ExportRow {
 }
 
 function escapeCSV(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('
-')) {
-    return `"${value.replace(/"/g, '""')}"`;
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return '"' + value.replace(/"/g, '""') + '"';
   }
   return value;
 }
@@ -88,8 +87,7 @@ export function transactionsToCSV(
     Object.values(row).map(String).map(escapeCSV).join(',')
   );
 
-  return [headers, ...csvRows].join('
-');
+  return [headers, ...csvRows].join('\n');
 }
 
 export function downloadCSV(csvContent: string, filename: string) {
