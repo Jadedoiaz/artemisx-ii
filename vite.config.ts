@@ -30,13 +30,13 @@ export default defineConfig({
           // State management
           'state': ['zustand', '@tanstack/react-query'],
           // Solana - only when wallet connected
-          'solana': ['@solana/web3.js', '@solana/wallet-adapter-react', '@solana/wallet-adapter-react-ui'],
-          // Solana wallets - lazy loaded
-          'solana-wallets': [
+          'solana': [
+            '@solana/web3.js',
+            '@solana/wallet-adapter-react',
+            '@solana/wallet-adapter-react-ui',
             '@solana/wallet-adapter-phantom',
             '@solana/wallet-adapter-solflare',
             '@solana/wallet-adapter-backpack',
-            '@solana/wallet-adapter-wallets',
           ],
           // EVM - only when EVM tab selected
           'evm': ['wagmi', 'viem'],
@@ -44,8 +44,6 @@ export default defineConfig({
           'charts': ['recharts'],
           // Notifications
           'notifications': ['react-hot-toast'],
-          // Animation
-          'animation': ['framer-motion'],
         },
       },
     },
