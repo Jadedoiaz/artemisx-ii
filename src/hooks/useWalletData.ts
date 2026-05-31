@@ -20,7 +20,7 @@ export function useWalletData() {
   const [tokens, setTokens] = useState<TokenBalance[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const heliusKey = import.meta.env.VITE_HELIUS_API_KEY;
+  const heliusKey = import.meta.env.VITE_HELIUS_API_KEY || '';
 
   const fetchBalances = useCallback(async () => {
     if (!publicKey || !connected) return;

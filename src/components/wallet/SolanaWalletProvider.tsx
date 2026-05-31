@@ -15,7 +15,7 @@ export default function SolanaWalletProvider({ children }: { children: React.Rea
 
   const endpoint = useMemo(() => {
     const customRpc = import.meta.env.VITE_SOLANA_RPC_URL;
-    if (customRpc) return customRpc;
+    if (customRpc && typeof customRpc === 'string') return customRpc;
     return clusterApiUrl(network);
   }, []);
 
