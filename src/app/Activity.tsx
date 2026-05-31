@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { useBumpStore } from '../stores/bumpStore';
 import { CheckCircle, XCircle, Clock, ExternalLink, RefreshCw, Wallet, Filter } from 'lucide-react';
-import { formatTime, shortenTx, formatAddress } from '../lib/utils';
+import { formatTime, shortenTx } from '../lib/utils';
 import { openExternal } from '../lib/tauri';
 import { cn } from '../lib/utils';
 import { ParsedTransaction } from '../lib/api';
@@ -24,10 +25,13 @@ const typeLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function Activity() {
-  const { connected } = useWallet();
+  const { connected: solanaConnected } = useWallet();
+  const { isConnected: evmConnected } = useAccount();
   const { transactions: heliusTxs, loading, error, refetch } = useTransactionHistory();
   const bumpTxs = useBumpStore((s) => s.transactions);
   const [filter, setFilter] = useState<string>('all');
+
+  const anyConnected = solanaConnected || evmConnected;
 
   // Merge bump transactions with Helius history
   const allTransactions: (ParsedTransaction & { source?: 'bump' | 'helius' })[] = [
@@ -56,10 +60,10 @@ export default function Activity() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Activity</h1>
-          <p className="text-muted mt-1">Transaction history and logs</p>
+          <p className="text-muted mt-1">Transaction history across all chains</p>
         </div>
         <div className="flex items-center gap-3">
-          {connected && (
+          {solanaConnected && (
             <button
               onClick={refetch}
               disabled={loading}
@@ -104,15 +108,15 @@ export default function Activity() {
               </tr>
             </thead>
             <tbody>
-              {!connected && (
+              {!anyConnected && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted">
                     <Wallet size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Connect your wallet to view transaction history</p>
+                    <p>Connect a wallet to view transaction history</p>
                   </td>
                 </tr>
               )}
-              {connected && filtered.length === 0 && !loading && (
+              {anyConnected && filtered.length === 0 && !loading && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted">
                     <Filter size={48} className="mx-auto mb-4 opacity-20" />
@@ -120,7 +124,7 @@ export default function Activity() {
                   </td>
                 </tr>
               )}
-              {connected && loading && filtered.length === 0 && (
+              {anyConnected && loading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted">
                     <RefreshCw size={32} className="mx-auto mb-4 animate-spin opacity-40" />
@@ -130,6 +134,11 @@ export default function Activity() {
               )}
               {filtered.map((tx) => {
                 const typeInfo = typeLabels[tx.type] || typeLabels.unknown;
+                const isEVM = tx.token === 'ETH' || tx.token === 'BNB';
+                const explorerUrl = isEVM
+                  ? (tx.token === 'BNB' ? `https://bscscan.com/tx/${tx.signature}` : `https://etherscan.io/tx/${tx.signature}`)
+                  : `https://solscan.io/tx/${tx.signature}`;
+
                 return (
                   <tr key={tx.signature} className="border-b border-border/50 last:border-0 hover:bg-surface-highlight/50 transition-colors">
                     <td className="px-6 py-4">
@@ -160,9 +169,9 @@ export default function Activity() {
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => openExternal(`https://solscan.io/tx/${tx.signature}`)}
+                        onClick={() => openExternal(explorerUrl)}
                         className="text-accent hover:text-accent-hover transition-colors"
-                        title="View on Solscan"
+                        title="View on explorer"
                       >
                         <ExternalLink size={16} />
                       </button>

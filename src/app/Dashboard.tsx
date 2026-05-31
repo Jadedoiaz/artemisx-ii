@@ -1,6 +1,9 @@
 import { useWalletData } from '../hooks/useWalletData';
+import { useEVMWalletData } from '../hooks/useEVMWalletData';
 import { useTokenPrices } from '../hooks/useTokenPrices';
 import { useBumpStore } from '../stores/bumpStore';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { Zap, TrendingUp, Activity, Clock, Wallet, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -22,32 +25,53 @@ function StatCard({ icon: Icon, label, value, color, loading }: { icon: any; lab
 
 export default function Dashboard() {
   const { bumpCount, successCount, isBumping } = useBumpStore();
-  const { connected, solBalance, tokens, loading: walletLoading, refetch } = useWalletData();
 
+  // Solana
+  const { connected: solanaConnected, solBalance, tokens, loading: solanaLoading, refetch: refetchSolana } = useWalletData();
+  const { publicKey } = useWallet();
+
+  // EVM
+  const { isConnected: evmConnected, balances: evmBalances } = useEVMWalletData();
+  const { address: evmAddress } = useAccount();
+
+  // Prices
   const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
-  const { prices, loading: pricesLoading } = useTokenPrices(allMints);
+  const { prices, loading: pricesLoading, refetch: refetchPrices } = useTokenPrices(allMints);
 
   const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 0;
-  const tokenValue = tokens.reduce((acc, t) => {
+  const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
+
+  const solanaValue = solBalance * solPrice + tokens.reduce((acc, t) => {
     const price = prices[t.mint]?.current_price;
     return acc + (price ? t.balance * price : 0);
   }, 0);
-  const totalValue = solBalance * solPrice + tokenValue;
-  const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
 
-  const isLoading = walletLoading || pricesLoading;
+  const ethBalance = evmBalances.find(b => b.chain === 'ethereum')?.balance || 0;
+  const bscBalance = evmBalances.find(b => b.chain === 'bsc')?.balance || 0;
+  const ethPrice = 3500; // Placeholder
+  const bnbPrice = 600;  // Placeholder
+
+  const totalValue = solanaValue + (ethBalance * ethPrice) + (bscBalance * bnbPrice);
+  const totalWallets = (solanaConnected ? 1 : 0) + (evmConnected ? 1 : 0);
+
+  const isLoading = solanaLoading || pricesLoading;
   const successRate = bumpCount > 0 ? ((successCount / bumpCount) * 100).toFixed(1) + '%' : '0%';
+
+  const handleRefresh = () => {
+    refetchSolana();
+    refetchPrices();
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted mt-1">Overview of your bump activity</p>
+          <p className="text-muted mt-1">Multi-chain overview</p>
         </div>
-        {connected && (
+        {solanaConnected && (
           <button
-            onClick={refetch}
+            onClick={handleRefresh}
             disabled={isLoading}
             className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border rounded-lg text-sm hover:border-accent transition-colors disabled:opacity-50"
           >
@@ -79,14 +103,59 @@ export default function Dashboard() {
         <StatCard
           icon={Wallet}
           label="Portfolio Value"
-          value={connected && totalValue > 0 ? `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+          value={totalValue > 0 ? `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
           color="bg-warning/10 text-warning"
-          loading={isLoading && connected}
+          loading={isLoading && solanaConnected}
         />
       </div>
 
-      {/* Portfolio mini-card */}
-      {connected && (
+      {/* Multi-chain wallet cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="text-sm font-medium">Solana</span>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${solanaConnected ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>
+              {solanaConnected ? 'Connected' : 'Offline'}
+            </span>
+          </div>
+          <p className="text-lg font-bold">{solanaConnected ? `${solBalance.toFixed(4)} SOL` : '—'}</p>
+          <p className="text-xs text-muted">{solanaConnected && solPrice > 0 ? `$${(solBalance * solPrice).toFixed(2)}` : ''}</p>
+        </div>
+
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="text-sm font-medium">BSC</span>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${evmConnected && bscBalance > 0 ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>
+              {evmConnected ? 'Connected' : 'Offline'}
+            </span>
+          </div>
+          <p className="text-lg font-bold">{evmConnected ? `${bscBalance.toFixed(6)} BNB` : '—'}</p>
+          <p className="text-xs text-muted">{evmConnected ? `$${(bscBalance * bnbPrice).toFixed(2)}` : ''}</p>
+        </div>
+
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-sm font-medium">Ethereum</span>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${evmConnected && ethBalance > 0 ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted'}`}>
+              {evmConnected ? 'Connected' : 'Offline'}
+            </span>
+          </div>
+          <p className="text-lg font-bold">{evmConnected ? `${ethBalance.toFixed(6)} ETH` : '—'}</p>
+          <p className="text-xs text-muted">{evmConnected ? `$${(ethBalance * ethPrice).toFixed(2)}` : ''}</p>
+        </div>
+      </div>
+
+      {/* Portfolio snapshot */}
+      {solanaConnected && (
         <div className="bg-surface border border-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Portfolio Snapshot</h3>

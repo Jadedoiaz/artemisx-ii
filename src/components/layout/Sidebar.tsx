@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
+import { useBumpStore } from '../../stores/bumpStore';
 import {
   LayoutDashboard,
   Zap,
@@ -21,7 +23,13 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected: solanaConnected } = useWallet();
+  const { address: evmAddress, isConnected: evmConnected } = useAccount();
+  const activeChain = useBumpStore((s) => s.activeChain);
+
+  const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
+  const showWallet = isEVM ? evmConnected : solanaConnected;
+  const walletAddress = isEVM ? evmAddress : (publicKey?.toBase58() || null);
 
   return (
     <aside className="w-64 h-screen bg-surface border-r border-border flex flex-col fixed left-0 top-0 z-50">
@@ -32,14 +40,14 @@ export default function Sidebar() {
         <p className="text-xs text-muted mt-1">Multi-Chain Bump Suite</p>
       </div>
 
-      {connected && publicKey && (
+      {showWallet && walletAddress && (
         <div className="px-4 py-3 border-b border-border bg-surface-highlight/50">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span className="text-xs text-muted">Connected</span>
+            <span className="text-xs text-muted">{isEVM ? 'MetaMask' : 'Solana'} Connected</span>
           </div>
           <p className="text-xs font-mono text-accent mt-1 truncate">
-            {formatAddress(publicKey.toBase58())}
+            {formatAddress(walletAddress)}
           </p>
         </div>
       )}
@@ -66,7 +74,7 @@ export default function Sidebar() {
       </nav>
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted text-center">
-          v2.0.0 Extended
+          v2.2.0 Extended
         </div>
       </div>
     </aside>

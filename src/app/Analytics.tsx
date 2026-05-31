@@ -29,7 +29,19 @@ const weeklyData = [
 ];
 
 export default function Analytics() {
-  const { bumpCount, successCount } = useBumpStore();
+  const { bumpCount, successCount, transactions } = useBumpStore();
+
+  // Calculate chain distribution from actual transactions
+  const solanaTxs = transactions.filter(t => t.chain === 'solana').length;
+  const bscTxs = transactions.filter(t => t.chain === 'bsc').length;
+  const ethTxs = transactions.filter(t => t.chain === 'ethereum').length;
+  const total = Math.max(solanaTxs + bscTxs + ethTxs, 1);
+
+  const realChainData = [
+    { name: 'Solana', value: Math.round((solanaTxs / total) * 100) || 33, color: '#7c3aed' },
+    { name: 'BSC', value: Math.round((bscTxs / total) * 100) || 33, color: '#eab308' },
+    { name: 'Ethereum', value: Math.round((ethTxs / total) * 100) || 34, color: '#3b82f6' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -81,7 +93,7 @@ export default function Analytics() {
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
-                data={chainData}
+                data={realChainData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -89,7 +101,7 @@ export default function Analytics() {
                 paddingAngle={4}
                 dataKey="value"
               >
-                {chainData.map((entry, index) => (
+                {realChainData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -104,10 +116,11 @@ export default function Analytics() {
             </PieChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-4 flex-wrap">
-            {chainData.map((c) => (
+            {realChainData.map((c) => (
               <div key={c.name} className="flex items-center gap-2 text-sm">
                 <span className="w-3 h-3 rounded-full" style={{ background: c.color }} />
                 <span className="text-muted">{c.name}</span>
+                <span className="text-white font-mono">{c.value}%</span>
               </div>
             ))}
           </div>

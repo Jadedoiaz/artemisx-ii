@@ -1,30 +1,56 @@
 import { useState } from 'react';
 import { useWalletData } from '../hooks/useWalletData';
+import { useEVMWalletData } from '../hooks/useEVMWalletData';
 import { useTokenPrices } from '../hooks/useTokenPrices';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { Wallet, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getCoinGeckoId } from '../lib/api';
 
 export default function Portfolio() {
   const [selectedChain, setSelectedChain] = useState('solana');
-  const { connected, solBalance, tokens, loading: walletLoading, refetch: refetchWallet } = useWalletData();
 
-  // Get all mints for price lookup
+  // Solana data
+  const { connected: solanaConnected, solBalance, tokens, loading: solanaLoading, refetch: refetchSolana } = useWalletData();
+  const { publicKey } = useWallet();
+
+  // EVM data
+  const { isConnected: evmConnected, balances: evmBalances, address: evmAddress } = useEVMWalletData();
+  const { address: evmAccount } = useAccount();
+
+  // Prices
   const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
   const { prices, loading: pricesLoading, refetch: refetchPrices } = useTokenPrices(allMints);
 
-  const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 142.30;
+  const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 0;
   const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
-  const totalValue = solBalance * solPrice + tokens.reduce((acc, t) => {
+
+  // Calculate totals per chain
+  const solanaValue = solBalance * solPrice + tokens.reduce((acc, t) => {
     const price = prices[t.mint]?.current_price;
     return acc + (price ? t.balance * price : 0);
   }, 0);
 
-  const isLoading = walletLoading || pricesLoading;
+  const ethBalance = evmBalances.find(b => b.chain === 'ethereum')?.balance || 0;
+  const bscBalance = evmBalances.find(b => b.chain === 'bsc')?.balance || 0;
+  // Mock prices for ETH/BNB until CoinGecko integration
+  const ethPrice = 3500; // Placeholder - would fetch from CoinGecko
+  const bnbPrice = 600;  // Placeholder
+
+  const totalValue = selectedChain === 'solana' ? solanaValue 
+    : selectedChain === 'ethereum' ? ethBalance * ethPrice 
+    : selectedChain === 'bsc' ? bscBalance * bnbPrice 
+    : solanaValue + (ethBalance * ethPrice) + (bscBalance * bnbPrice);
+
+  const isLoading = solanaLoading || pricesLoading;
+  const connected = selectedChain === 'solana' ? solanaConnected : selectedChain === 'ethereum' || selectedChain === 'bsc' ? evmConnected : (solanaConnected || evmConnected);
 
   const handleRefresh = () => {
-    refetchWallet();
-    refetchPrices();
+    if (selectedChain === 'solana') {
+      refetchSolana();
+      refetchPrices();
+    }
   };
 
   return (
@@ -35,7 +61,7 @@ export default function Portfolio() {
           <p className="text-muted mt-1">Multi-chain asset overview</p>
         </div>
         <div className="flex items-center gap-3">
-          {connected && (
+          {connected && selectedChain === 'solana' && (
             <button
               onClick={handleRefresh}
               disabled={isLoading}
@@ -70,16 +96,25 @@ export default function Portfolio() {
             <p className="text-3xl font-bold">
               {connected ? `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
             </p>
-            {connected && (
+            {selectedChain === 'solana' && solanaConnected && (
               <p className={`text-sm mt-1 flex items-center gap-1 ${solChange >= 0 ? 'text-success' : 'text-danger'}`}>
                 {solChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 {Math.abs(solChange).toFixed(2)}% (24h)
               </p>
             )}
           </div>
+          <div className="text-sm text-muted">
+            {selectedChain === 'solana' && publicKey && (
+              <span className="font-mono">{publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}</span>
+            )}
+            {(selectedChain === 'ethereum' || selectedChain === 'bsc') && evmAddress && (
+              <span className="font-mono">{evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}</span>
+            )}
+          </div>
         </div>
 
-        {selectedChain === 'solana' && connected && (
+        {/* Solana Portfolio */}
+        {selectedChain === 'solana' && solanaConnected && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
@@ -92,13 +127,10 @@ export default function Portfolio() {
                 </tr>
               </thead>
               <tbody>
-                {/* SOL Row */}
                 <tr className="border-b border-border/50">
                   <td className="py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">
-                        S
-                      </div>
+                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">S</div>
                       <div>
                         <p className="font-medium">Solana</p>
                         <p className="text-xs text-muted">SOL</p>
@@ -106,9 +138,7 @@ export default function Portfolio() {
                     </div>
                   </td>
                   <td className="py-4 font-mono text-sm">{solBalance.toFixed(4)}</td>
-                  <td className="py-4 font-mono text-sm">
-                    {pricesLoading ? '...' : `$${solPrice.toFixed(2)}`}
-                  </td>
+                  <td className="py-4 font-mono text-sm">{pricesLoading ? '...' : solPrice > 0 ? `$${solPrice.toFixed(2)}` : '—'}</td>
                   <td className="py-4 font-mono text-sm">${(solBalance * solPrice).toFixed(2)}</td>
                   <td className="py-4">
                     <span className={`flex items-center gap-1 text-sm ${solChange >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -117,20 +147,14 @@ export default function Portfolio() {
                     </span>
                   </td>
                 </tr>
-
-                {/* Token Rows */}
                 {tokens.map((token) => {
                   const price = prices[token.mint]?.current_price;
                   const change = prices[token.mint]?.price_change_percentage_24h || 0;
-                  const hasPrice = getCoinGeckoId(token.mint) !== null;
-
                   return (
                     <tr key={token.mint} className="border-b border-border/50 last:border-0">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-surface-highlight flex items-center justify-center text-xs font-bold text-muted">
-                            {token.symbol[0]}
-                          </div>
+                          <div className="w-8 h-8 rounded-full bg-surface-highlight flex items-center justify-center text-xs font-bold text-muted">{token.symbol[0]}</div>
                           <div>
                             <p className="font-medium">{token.name}</p>
                             <p className="text-xs text-muted font-mono">{token.mint.slice(0, 6)}...{token.mint.slice(-4)}</p>
@@ -138,21 +162,15 @@ export default function Portfolio() {
                         </div>
                       </td>
                       <td className="py-4 font-mono text-sm">{token.balance.toLocaleString()}</td>
-                      <td className="py-4 font-mono text-sm">
-                        {pricesLoading ? '...' : price ? `$${price < 0.01 ? price.toExponential(2) : price.toFixed(4)}` : hasPrice ? '...' : '—'}
-                      </td>
-                      <td className="py-4 font-mono text-sm">
-                        {price ? `$${(token.balance * price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}
-                      </td>
+                      <td className="py-4 font-mono text-sm">{pricesLoading ? '...' : price ? `$${price < 0.01 ? price.toExponential(2) : price.toFixed(4)}` : '—'}</td>
+                      <td className="py-4 font-mono text-sm">{price ? `$${(token.balance * price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}</td>
                       <td className="py-4">
                         {price ? (
                           <span className={`flex items-center gap-1 text-sm ${change >= 0 ? 'text-success' : 'text-danger'}`}>
                             {change >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                             {Math.abs(change).toFixed(2)}%
                           </span>
-                        ) : (
-                          <span className="text-muted text-sm">—</span>
-                        )}
+                        ) : <span className="text-muted text-sm">—</span>}
                       </td>
                     </tr>
                   );
@@ -162,17 +180,56 @@ export default function Portfolio() {
           </div>
         )}
 
-        {selectedChain === 'solana' && !connected && (
-          <div className="py-12 text-center text-muted">
-            <Wallet size={48} className="mx-auto mb-4 opacity-20" />
-            <p>Connect your wallet to view live portfolio data</p>
+        {/* EVM Portfolio */}
+        {(selectedChain === 'ethereum' || selectedChain === 'bsc') && evmConnected && (
+          <div className="space-y-4">
+            {selectedChain === 'ethereum' && (
+              <div className="bg-surface-highlight border border-border rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">E</div>
+                  <div>
+                    <p className="font-medium">Ethereum</p>
+                    <p className="text-xs text-muted">ETH</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-mono text-sm">{ethBalance.toFixed(6)} ETH</p>
+                  <p className="text-xs text-muted">${(ethBalance * ethPrice).toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+            {selectedChain === 'bsc' && (
+              <div className="bg-surface-highlight border border-border rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center text-xs font-bold text-yellow-400">B</div>
+                  <div>
+                    <p className="font-medium">BNB Chain</p>
+                    <p className="text-xs text-muted">BNB</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-mono text-sm">{bscBalance.toFixed(6)} BNB</p>
+                  <p className="text-xs text-muted">${(bscBalance * bnbPrice).toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted text-center py-4">
+              Full EVM token support coming in next update
+            </p>
           </div>
         )}
 
-        {selectedChain !== 'solana' && (
+        {/* Disconnected states */}
+        {selectedChain === 'solana' && !solanaConnected && (
           <div className="py-12 text-center text-muted">
-            <AlertCircle size={48} className="mx-auto mb-4 opacity-20" />
-            <p>{selectedChain === 'bsc' ? 'BSC' : 'Ethereum'} portfolio coming soon</p>
+            <Wallet size={48} className="mx-auto mb-4 opacity-20" />
+            <p>Connect your Solana wallet to view portfolio</p>
+          </div>
+        )}
+        {(selectedChain === 'ethereum' || selectedChain === 'bsc') && !evmConnected && (
+          <div className="py-12 text-center text-muted">
+            <Wallet size={48} className="mx-auto mb-4 opacity-20" />
+            <p>Connect your MetaMask wallet to view {selectedChain === 'bsc' ? 'BSC' : 'Ethereum'} portfolio</p>
           </div>
         )}
       </div>

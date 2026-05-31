@@ -1,13 +1,16 @@
 import { useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import { useBumpEngine } from '../hooks/useBumpEngine';
-import { useWalletData } from '../hooks/useWalletData';
+import { useEVMBumpEngine } from '../hooks/useEVMBumpEngine';
+import { useBumpStore } from '../stores/bumpStore';
 import { Play, Pause, Zap, Wallet } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const CHAINS = [
-  { id: 'solana', name: 'Solana', color: 'bg-purple-500' },
-  { id: 'bsc', name: 'BSC', color: 'bg-yellow-500' },
-  { id: 'ethereum', name: 'Ethereum', color: 'bg-blue-500' },
+  { id: 'solana', name: 'Solana', color: 'bg-purple-500', symbol: 'SOL' },
+  { id: 'bsc', name: 'BSC', color: 'bg-yellow-500', symbol: 'BNB' },
+  { id: 'ethereum', name: 'Ethereum', color: 'bg-blue-500', symbol: 'ETH' },
 ];
 
 const PRESETS = [
@@ -20,20 +23,48 @@ export default function BumpCenter() {
   const [activeChain, setActiveChain] = useState('solana');
   const [amount, setAmount] = useState('0.001');
   const [interval, setInterval] = useState('5');
-  const { connected } = useWalletData();
-  const { sendBump, startAutoBump, stopAutoBump, isBumping } = useBumpEngine();
+
+  const { connected: solanaConnected } = useWallet();
+  const { isConnected: evmConnected } = useAccount();
+  const { isBumping, setBumping, setActiveChain: setStoredChain } = useBumpStore();
+
+  const solanaBump = useBumpEngine();
+  const evmBump = useEVMBumpEngine();
+
+  const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
+  const walletConnected = isEVM ? evmConnected : solanaConnected;
+  const bumpEngine = isEVM ? evmBump : solanaBump;
+
+  const handleChainChange = (chainId: string) => {
+    setActiveChain(chainId);
+    setStoredChain(chainId);
+    // Stop any active bumping when switching chains
+    if (isBumping) {
+      bumpEngine.stopAutoBump();
+    }
+  };
 
   const handleStart = () => {
     if (isBumping) {
-      stopAutoBump();
+      bumpEngine.stopAutoBump();
     } else {
-      startAutoBump(parseFloat(amount), parseInt(interval));
+      if (isEVM) {
+        evmBump.startAutoBump(parseFloat(amount), parseInt(interval), activeChain as 'ethereum' | 'bsc');
+      } else {
+        solanaBump.startAutoBump(parseFloat(amount), parseInt(interval));
+      }
     }
   };
 
   const handleManualBump = () => {
-    sendBump(parseFloat(amount));
+    if (isEVM) {
+      evmBump.sendBump(parseFloat(amount), activeChain as 'ethereum' | 'bsc');
+    } else {
+      solanaBump.sendBump(parseFloat(amount));
+    }
   };
+
+  const chainInfo = CHAINS.find(c => c.id === activeChain);
 
   return (
     <div className="space-y-6">
@@ -42,10 +73,12 @@ export default function BumpCenter() {
         <p className="text-muted mt-1">Configure and execute bump transactions</p>
       </div>
 
-      {!connected && (
+      {!walletConnected && (
         <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-center gap-3 text-warning">
           <Wallet size={20} />
-          <span className="text-sm">Connect your wallet to start bumping</span>
+          <span className="text-sm">
+            Connect your {isEVM ? 'MetaMask' : 'Solana'} wallet to start bumping
+          </span>
         </div>
       )}
 
@@ -53,7 +86,7 @@ export default function BumpCenter() {
         {CHAINS.map((chain) => (
           <button
             key={chain.id}
-            onClick={() => setActiveChain(chain.id)}
+            onClick={() => handleChainChange(chain.id)}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg border text-sm font-medium transition-all',
               activeChain === chain.id
@@ -76,7 +109,7 @@ export default function BumpCenter() {
 
           <div>
             <label className="text-sm text-muted mb-1 block">
-              Amount ({activeChain === 'solana' ? 'SOL' : activeChain === 'bsc' ? 'BNB' : 'ETH'})
+              Amount ({chainInfo?.symbol || 'SOL'})
             </label>
             <input
               type="number"
@@ -120,7 +153,7 @@ export default function BumpCenter() {
           <div className="flex gap-3">
             <button
               onClick={handleManualBump}
-              disabled={!connected || isBumping}
+              disabled={!walletConnected || isBumping}
               className="flex-1 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all bg-surface-highlight border border-border hover:border-accent hover:text-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Zap size={18} />
@@ -128,7 +161,7 @@ export default function BumpCenter() {
             </button>
             <button
               onClick={handleStart}
-              disabled={!connected}
+              disabled={!walletConnected}
               className={cn(
                 'flex-1 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all',
                 isBumping
@@ -147,8 +180,8 @@ export default function BumpCenter() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">Wallet</span>
-              <span className={connected ? 'text-success' : 'text-muted'}>
-                {connected ? 'Connected' : 'Disconnected'}
+              <span className={walletConnected ? 'text-success' : 'text-muted'}>
+                {walletConnected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
             <div className="flex justify-between">
@@ -163,7 +196,7 @@ export default function BumpCenter() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Amount</span>
-              <span className="font-mono">{amount} SOL</span>
+              <span className="font-mono">{amount} {chainInfo?.symbol}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted">Interval</span>
