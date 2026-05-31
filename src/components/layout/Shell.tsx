@@ -1,61 +1,50 @@
-import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import MobileSidebar from './MobileSidebar';
-import AnimatedBackground from './AnimatedBackground';
+import React, { useState, useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { MobileSidebar } from './MobileSidebar';
+import { useTheme } from '../../hooks/useTheme';
 
-const pageVariants: Variants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-};
+export const Shell: React.FC = () => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme } = useTheme();
 
-const pageTransition = {
-  type: 'tween' as const,
-  ease: 'easeInOut' as const,
-  duration: 0.25,
-};
-
-export default function Shell() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0f] relative">
-      <AnimatedBackground />
-
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden lg:block">
+    <div className={`flex h-screen w-screen overflow-hidden bg-theme-primary text-theme-primary ${theme}`}>
+      <aside className="hidden lg:block">
         <Sidebar />
-      </div>
+      </aside>
 
-      {/* Mobile Sidebar */}
-      <MobileSidebar 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)} 
-      />
+      <AnimatePresence>
+        {mobileOpen && (
+          <MobileSidebar onClose={() => setMobileOpen(false)} />
+        )}
+      </AnimatePresence>
 
-      {/* Main content */}
-      <div className="flex-1 lg:ml-64">
-        <Header onMenuToggle={() => setMobileMenuOpen(true)} />
-
-        <main className="p-4 md:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={pageTransition}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
     </div>
   );
-}
+};

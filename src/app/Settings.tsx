@@ -1,229 +1,243 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Key, Webhook, Link2, Palette, Zap, Clock, Bell, Sun, Moon, Check } from 'lucide-react';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useNotifications } from '../hooks/useNotifications';
-import { Key, Shield, Palette, Webhook, Bell, BellOff, BellRing } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { useTheme } from '../hooks/useTheme';
 
-export default function Settings() {
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
+
+export const Settings: React.FC = () => {
   const {
+    heliusApiKey,
+    discordWebhookUrl,
+    solanaRpcUrl,
     accentColor,
     maxBumpAmount,
     cooldownMs,
-    discordWebhook,
-    heliusKey,
-    solanaRpc,
+    notificationsEnabled,
+    theme: storedTheme,
+    setHeliusApiKey,
+    setDiscordWebhookUrl,
+    setSolanaRpcUrl,
     setAccentColor,
-    setMaxBump,
-    setCooldown,
-    setWebhook,
-    setHeliusKey,
-    setSolanaRpc,
+    setMaxBumpAmount,
+    setCooldownMs,
+    setNotificationsEnabled,
+    setTheme,
   } = useSettingsStore();
 
-  const { supported, permission, enabled, enable, disable } = useNotifications();
+  const { theme, toggle } = useTheme();
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const colors = [
+    { id: 'purple', class: 'bg-purple-500' },
+    { id: 'blue', class: 'bg-blue-500' },
+    { id: 'emerald', class: 'bg-emerald-500' },
+    { id: 'rose', class: 'bg-rose-500' },
+    { id: 'amber', class: 'bg-amber-500' },
+  ];
+
+  const handleTestWebhook = async () => {
+    if (!discordWebhookUrl) return;
+    try {
+      const res = await fetch(discordWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: 'Artemis X-II webhook test successful.' }),
+      });
+      setTestStatus(res.ok ? 'success' : 'error');
+    } catch {
+      setTestStatus('error');
+    }
+    setTimeout(() => setTestStatus('idle'), 3000);
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted mt-1">Configure your Artemis X-II instance</p>
-      </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-3xl space-y-6">
+      <motion.div variants={item}>
+        <h1 className="text-2xl font-bold text-theme-primary">Settings</h1>
+        <p className="mt-1 text-sm text-theme-muted">Configure your API keys, preferences, and appearance.</p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* API Keys */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Key size={18} className="text-accent" />
-            <h3 className="font-semibold">API Keys</h3>
-          </div>
-
-          <div>
-            <label className="text-sm text-muted mb-1 block">Helius API Key</label>
-            <input
-              type="password"
-              value={heliusKey}
-              onChange={(e) => setHeliusKey(e.target.value)}
-              placeholder="Enter your Helius API key"
-              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-muted mb-1 block">Discord Webhook URL</label>
-            <input
-              type="url"
-              value={discordWebhook}
-              onChange={(e) => setWebhook(e.target.value)}
-              placeholder="https://discord.com/api/webhooks/..."
-              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-muted mb-1 block">Solana RPC URL</label>
-            <input
-              type="url"
-              value={solanaRpc}
-              onChange={(e) => setSolanaRpc(e.target.value)}
-              placeholder="https://api.devnet.solana.com"
-              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-            />
-          </div>
+      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Palette size={18} className="text-theme-secondary" />
+          <h2 className="font-semibold text-theme-primary">Appearance</h2>
         </div>
-
-        {/* Safety Controls */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Shield size={18} className="text-accent" />
-            <h3 className="font-semibold">Safety Controls</h3>
+        <div className="space-y-5">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-theme-secondary">Theme</label>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setTheme('dark'); applyTheme('dark'); }}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+                  theme === 'dark'
+                    ? 'border-purple-500 bg-purple-500/10 text-purple-400'
+                    : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                }`}
+              >
+                <Moon size={16} /> Dark
+              </button>
+              <button
+                onClick={() => { setTheme('light'); applyTheme('light'); }}
+                className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
+                  theme === 'light'
+                    ? 'border-purple-500 bg-purple-500/10 text-purple-400'
+                    : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                }`}
+              >
+                <Sun size={16} /> Light
+              </button>
+            </div>
           </div>
 
           <div>
-            <label className="text-sm text-muted mb-1 block">Max Bump Amount (lamports)</label>
-            <input
-              type="number"
-              value={maxBumpAmount}
-              onChange={(e) => setMaxBump(Number(e.target.value))}
-              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-muted mb-1 block">Cooldown (milliseconds)</label>
-            <input
-              type="number"
-              value={cooldownMs}
-              onChange={(e) => setCooldown(Number(e.target.value))}
-              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
-            />
-          </div>
-        </div>
-
-        {/* Theme */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Palette size={18} className="text-accent" />
-            <h3 className="font-semibold">Theme</h3>
-          </div>
-
-          <div>
-            <label className="text-sm text-muted mb-1 block">Accent Color</label>
-            <div className="flex gap-2 flex-wrap">
-              {['#7c3aed', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444'].map((c) => (
+            <label className="mb-2 block text-sm font-medium text-theme-secondary">Accent Color</label>
+            <div className="flex flex-wrap gap-3">
+              {colors.map((c) => (
                 <button
-                  key={c}
-                  onClick={() => setAccentColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    accentColor === c ? 'border-white scale-110' : 'border-transparent'
+                  key={c.id}
+                  onClick={() => setAccentColor(c.id)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${c.class} transition-transform hover:scale-110 ${
+                    accentColor === c.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''
                   }`}
-                  style={{ background: c }}
-                />
+                  aria-label={`Select ${c.id} accent`}
+                >
+                  {accentColor === c.id && <Check size={14} className="text-white" />}
+                </button>
               ))}
             </div>
           </div>
         </div>
+      </motion.div>
 
-        {/* Push Notifications */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Bell size={18} className="text-accent" />
-            <h3 className="font-semibold">Push Notifications</h3>
-          </div>
-
-          {!supported && (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-warning">
-                <BellOff size={16} />
-                <span className="text-sm font-medium">Not Supported</span>
-              </div>
-              <p className="text-xs text-muted mt-1">
-                Your browser does not support push notifications.
-              </p>
-            </div>
-          )}
-
-          {supported && permission === 'denied' && (
-            <div className="bg-danger/10 border border-danger/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-danger">
-                <BellOff size={16} />
-                <span className="text-sm font-medium">Permission Denied</span>
-              </div>
-              <p className="text-xs text-muted mt-1">
-                Notifications were blocked. Enable them in your browser settings to use this feature.
-              </p>
-            </div>
-          )}
-
-          {supported && permission !== 'denied' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Enable Notifications</p>
-                  <p className="text-xs text-muted">
-                    Get alerts when bumps complete, fail, or auto-bump stops
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (enabled) {
-                      disable();
-                    } else {
-                      enable();
-                    }
-                  }}
-                  className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
-                    enabled
-                      ? 'bg-success/10 text-success border border-success/30 hover:bg-success/20'
-                      : 'bg-surface-highlight border border-border text-muted hover:text-white hover:border-accent'
-                  )}
-                >
-                  {enabled ? <BellRing size={16} /> : <Bell size={16} />}
-                  {enabled ? 'Enabled' : 'Enable'}
-                </button>
-              </div>
-
-              {enabled && (
-                <div className="bg-success/10 border border-success/20 rounded-lg p-3">
-                  <p className="text-xs text-success flex items-center gap-2">
-                    <BellRing size={14} />
-                    Notifications active. You will receive alerts for all bump events.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Key size={18} className="text-theme-secondary" />
+          <h2 className="font-semibold text-theme-primary">API Keys</h2>
         </div>
-
-        {/* Webhook Test */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Webhook size={18} className="text-accent" />
-            <h3 className="font-semibold">Discord Integration</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-theme-secondary">Helius API Key</label>
+            <input
+              type="password"
+              value={heliusApiKey}
+              onChange={(e) => setHeliusApiKey(e.target.value)}
+              placeholder="Enter your Helius API key"
+              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-theme-muted">Required for live portfolio data, NFT gallery, and transaction history.</p>
           </div>
 
-          <p className="text-sm text-muted">
-            Configure your Discord webhook above to receive bump notifications in real-time.
-          </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-theme-secondary">Discord Webhook URL</label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={discordWebhookUrl}
+                onChange={(e) => setDiscordWebhookUrl(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/..."
+                className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+              />
+              <button
+                onClick={handleTestWebhook}
+                disabled={!discordWebhookUrl}
+                className="rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-secondary transition-colors hover:bg-theme-primary hover:text-white disabled:opacity-40"
+              >
+                {testStatus === 'success' ? 'Sent!' : testStatus === 'error' ? 'Failed' : 'Test'}
+              </button>
+            </div>
+          </div>
 
+          <div>
+            <label className="mb-1 block text-sm font-medium text-theme-secondary">Solana RPC URL</label>
+            <div className="flex items-center gap-2">
+              <Link2 size={14} className="text-theme-muted" />
+              <input
+                type="url"
+                value={solanaRpcUrl}
+                onChange={(e) => setSolanaRpcUrl(e.target.value)}
+                placeholder="https://api.mainnet-beta.solana.com"
+                className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Zap size={18} className="text-theme-secondary" />
+          <h2 className="font-semibold text-theme-primary">Bump Engine</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-theme-secondary">Max Bump Amount (lamports)</label>
+            <input
+              type="number"
+              value={maxBumpAmount}
+              onChange={(e) => setMaxBumpAmount(Number(e.target.value))}
+              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-theme-muted">Safety cap per transaction. 1000 lamports = ~0.001 SOL.</p>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-theme-secondary">Cooldown (ms)</label>
+            <input
+              type="number"
+              value={cooldownMs}
+              onChange={(e) => setCooldownMs(Number(e.target.value))}
+              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-theme-muted">Minimum delay between bumps in milliseconds.</p>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Bell size={18} className="text-theme-secondary" />
+          <h2 className="font-semibold text-theme-primary">Notifications</h2>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-theme-primary">Push Notifications</p>
+            <p className="text-xs text-theme-muted">Browser alerts when bumps complete or fail.</p>
+          </div>
           <button
-            onClick={() => {
-              if (discordWebhook) {
-                fetch(discordWebhook, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    content: 'Artemis X-II webhook test successful!',
-                  }),
-                }).catch((err) => console.error('Webhook test failed:', err));
-              }
-            }}
-            disabled={!discordWebhook}
-            className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+            className={`relative h-6 w-11 rounded-full transition-colors ${
+              notificationsEnabled ? 'bg-purple-500' : 'bg-slate-600'
+            }`}
           >
-            Test Webhook
+            <span
+              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
+};
+
+function applyTheme(t: 'dark' | 'light') {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  if (t === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+  } else {
+    root.classList.add('light');
+    root.classList.remove('dark');
+  }
 }
