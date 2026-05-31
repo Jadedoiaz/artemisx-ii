@@ -32,14 +32,14 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+    <motion.div variants={container} initial={false} animate="show" className="space-y-6">
       <motion.div variants={item}>
         <h1 className="text-2xl font-bold text-theme-primary">Dashboard</h1>
         <p className="mt-1 text-sm text-theme-muted">Overview of your bumping activity and wallet status.</p>
       </motion.div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, i) => (
+        {stats.map((stat) => (
           <motion.div
             key={stat.label}
             variants={item}

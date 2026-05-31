@@ -25,14 +25,14 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   return (
     <>
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
       />
       <motion.aside
-        initial={{ x: -280 }}
+        initial={false}
         animate={{ x: 0 }}
         exit={{ x: -280 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}

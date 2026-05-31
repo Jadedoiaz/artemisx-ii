@@ -13,12 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const accentColor = useSettingsStore((s) => s.accentColor);
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-theme bg-theme-card px-4 lg:px-8"
-    >
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-theme bg-theme-card px-4 lg:px-8">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -45,6 +40,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <WalletConnectButton />
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 };

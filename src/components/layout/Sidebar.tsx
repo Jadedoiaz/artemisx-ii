@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { LayoutDashboard, Zap, Wallet, Image, Activity, BarChart3, Settings } from 'lucide-react';
 import { useBumpStore } from '../../stores/bumpStore';
 

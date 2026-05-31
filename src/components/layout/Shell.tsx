@@ -11,17 +11,18 @@ export const Shell: React.FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
     } else {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
+      root.classList.add('light');
+      root.classList.remove('dark');
     }
   }, [theme]);
 
   return (
-    <div className={`flex h-screen w-screen overflow-hidden bg-theme-primary text-theme-primary ${theme}`}>
+    <div className="flex h-screen w-screen overflow-hidden bg-theme-primary text-theme-primary">
       <aside className="hidden lg:block">
         <Sidebar />
       </aside>
@@ -35,10 +36,10 @@ export const Shell: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          {/* initial={false} prevents Framer Motion from starting at opacity:0 */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
           >
             <Outlet />
