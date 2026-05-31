@@ -1,8 +1,8 @@
 // CoinGecko API for live token prices
-// Helius API for parsed transaction history
+// Helius API for parsed transaction history and NFTs
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-const HELIUS_API = 'https://mainnet.helius-rpc.com';
+const HELIUS_RPC = 'https://mainnet.helius-rpc.com';
 
 // Cache prices for 60 seconds to respect rate limits
 const priceCache = new Map<string, { price: number; change24h: number; timestamp: number }>();
@@ -30,6 +30,25 @@ export interface ParsedTransaction {
   status: 'pending' | 'success' | 'failed';
 }
 
+export interface NFTAsset {
+  mint: string;
+  name: string;
+  image: string;
+  collection: string;
+  attributes: Array<{ trait_type: string; value: string }>;
+  floorPrice?: number;
+  listed?: boolean;
+  marketplace?: string;
+}
+
+export interface NFTCollection {
+  name: string;
+  symbol: string;
+  image: string;
+  count: number;
+  floorPrice?: number;
+}
+
 // Map common Solana token mints to CoinGecko IDs
 const MINT_TO_COINGECKO: Record<string, string> = {
   'So11111111111111111111111111111111111111112': 'solana',
@@ -48,7 +67,6 @@ export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
   const ids = mints.map(getCoinGeckoId).filter((id): id is string => id !== null);
   if (ids.length === 0) return [];
 
-  // Check cache first
   const now = Date.now();
   const cached = ids.map(id => priceCache.get(id)).filter(Boolean);
   if (cached.length === ids.length && cached.every(c => c && now - c.timestamp < CACHE_TTL)) {
@@ -68,7 +86,6 @@ export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
     if (!response.ok) throw new Error('CoinGecko rate limit');
     const data: TokenPrice[] = await response.json();
 
-    // Update cache
     data.forEach(token => {
       priceCache.set(token.id, {
         price: token.current_price,
@@ -80,7 +97,6 @@ export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
     return data;
   } catch (err) {
     console.error('Price fetch failed:', err);
-    // Return cached data even if stale
     return ids.map((id, i) => {
       const cached = priceCache.get(id);
       return cached ? {
@@ -99,7 +115,7 @@ export async function fetchTransactionHistory(
   apiKey?: string
 ): Promise<ParsedTransaction[]> {
   const rpcUrl = apiKey
-    ? `${HELIUS_API}/?api-key=${apiKey}`
+    ? `${HELIUS_RPC}/?api-key=${apiKey}`
     : 'https://api.mainnet-beta.solana.com';
 
   try {
@@ -120,31 +136,17 @@ export async function fetchTransactionHistory(
 
     if (signatures.length === 0) return [];
 
-    // Fetch parsed transactions
-    const txResponse = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'getTransaction',
-        params: [signatures[0].signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }],
-      }),
-    });
-
-    // For now, return formatted signatures as transactions
-    // Full parsed transaction parsing would require Helius enhanced API
     return signatures.map((sig: any) => ({
       signature: sig.signature,
       timestamp: (sig.blockTime || Date.now() / 1000) * 1000,
-      type: 'unknown' as const,
+      type: 'unknown' as ParsedTransaction['type'],
       description: `Transaction ${sig.signature.slice(0, 8)}...`,
       from: address,
       to: address,
       amount: 0,
       token: 'SOL',
       fee: 0,
-      status: (sig.err ? 'failed' : 'success') as 'success' | 'failed',
+      status: (sig.err ? 'failed' : 'success') as ParsedTransaction['status'],
     }));
   } catch (err) {
     console.error('Transaction history fetch failed:', err);
@@ -152,7 +154,6 @@ export async function fetchTransactionHistory(
   }
 }
 
-// Enhanced Helius API for parsed transactions (requires Helius API key)
 export async function fetchHeliusTransactions(
   address: string,
   apiKey: string
@@ -176,7 +177,7 @@ export async function fetchHeliusTransactions(
       amount: tx.nativeTransfers?.[0]?.amount || 0,
       token: 'SOL',
       fee: tx.fee || 0,
-      status: (tx.slot ? 'success' : 'failed') as 'success' | 'failed',
+      status: (tx.slot ? 'success' : 'failed') as ParsedTransaction['status'],
     }));
   } catch (err) {
     console.error('Helius enhanced fetch failed:', err);
@@ -192,36 +193,13 @@ function classifyTransaction(tx: any): ParsedTransaction['type'] {
   return 'unknown';
 }
 
-
-import { ParsedTransaction } from './api';
-
-export interface NFTAsset {
-  mint: string;
-  name: string;
-  image: string;
-  collection: string;
-  attributes: Array<{ trait_type: string; value: string }>;
-  floorPrice?: number;
-  listed?: boolean;
-  marketplace?: string;
-}
-
-export interface NFTCollection {
-  name: string;
-  symbol: string;
-  image: string;
-  count: number;
-  floorPrice?: number;
-}
-
-const HELIUS_API = 'https://mainnet.helius-rpc.com';
-
+// NFT Functions
 export async function fetchNFTsByOwner(
   address: string,
   apiKey: string
 ): Promise<NFTAsset[]> {
   try {
-    const response = await fetch(`${HELIUS_API}/?api-key=${apiKey}`, {
+    const response = await fetch(`${HELIUS_RPC}/?api-key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
