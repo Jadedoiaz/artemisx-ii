@@ -1,5 +1,5 @@
 import { WagmiProvider } from 'wagmi'
-import { evmConfig } from '../lib/evm'
+import { evmConfig } from '../../lib/evm'
 import SolanaWalletProvider from './SolanaWalletProvider'
 
 export default function UnifiedWalletProvider({ children }: { children: React.ReactNode }) {

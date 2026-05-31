@@ -27,7 +27,7 @@ export interface ParsedTransaction {
   amount: number;
   token: string;
   fee: number;
-  status: 'success' | 'failed';
+  status: 'pending' | 'success' | 'failed';
 }
 
 // Map common Solana token mints to CoinGecko IDs
@@ -45,15 +45,15 @@ export function getCoinGeckoId(mint: string): string | null {
 }
 
 export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
-  const ids = mints.map(getCoinGeckoId).filter(Boolean);
+  const ids = mints.map(getCoinGeckoId).filter((id): id is string => id !== null);
   if (ids.length === 0) return [];
 
   // Check cache first
   const now = Date.now();
   const cached = ids.map(id => priceCache.get(id)).filter(Boolean);
-  if (cached.length === ids.length && cached.every(c => now - c!.timestamp < CACHE_TTL)) {
-    return cached.map(c => ({
-      id: c!.id,
+  if (cached.length === ids.length && cached.every(c => c && now - c.timestamp < CACHE_TTL)) {
+    return cached.map((c, i) => ({
+      id: ids[i],
       symbol: '',
       name: '',
       current_price: c!.price,
@@ -81,7 +81,7 @@ export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
   } catch (err) {
     console.error('Price fetch failed:', err);
     // Return cached data even if stale
-    return ids.map(id => {
+    return ids.map((id, i) => {
       const cached = priceCache.get(id);
       return cached ? {
         id,
@@ -90,7 +90,7 @@ export async function fetchTokenPrices(mints: string[]): Promise<TokenPrice[]> {
         current_price: cached.price,
         price_change_percentage_24h: cached.change24h,
       } : null;
-    }).filter(Boolean) as TokenPrice[];
+    }).filter((item): item is TokenPrice => item !== null);
   }
 }
 
@@ -144,7 +144,7 @@ export async function fetchTransactionHistory(
       amount: 0,
       token: 'SOL',
       fee: 0,
-      status: sig.err ? 'failed' : 'success',
+      status: (sig.err ? 'failed' : 'success') as 'success' | 'failed',
     }));
   } catch (err) {
     console.error('Transaction history fetch failed:', err);
@@ -176,7 +176,7 @@ export async function fetchHeliusTransactions(
       amount: tx.nativeTransfers?.[0]?.amount || 0,
       token: 'SOL',
       fee: tx.fee || 0,
-      status: tx.slot ? 'success' : 'failed',
+      status: (tx.slot ? 'success' : 'failed') as 'success' | 'failed',
     }));
   } catch (err) {
     console.error('Helius enhanced fetch failed:', err);

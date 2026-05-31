@@ -24,28 +24,32 @@ const typeLabels: Record<string, { label: string; color: string }> = {
   unknown: { label: 'TX', color: 'text-muted' },
 };
 
+interface ActivityTransaction extends ParsedTransaction {
+  source?: 'bump' | 'helius';
+}
+
 export default function Activity() {
   const { connected: solanaConnected } = useWallet();
   const { isConnected: evmConnected } = useAccount();
   const { transactions: heliusTxs, loading, error, refetch } = useTransactionHistory();
-  const bumpTxs = useBumpStore((s) => s.transactions);
+  const bumpTxs = useBumpStore((s: { transactions: Array<{ id: string; chain: string; type: string; amount: number; status: 'pending' | 'success' | 'failed'; txId?: string; timestamp: number; from: string; to: string }> }) => s.transactions);
   const [filter, setFilter] = useState<string>('all');
 
   const anyConnected = solanaConnected || evmConnected;
 
   // Merge bump transactions with Helius history
-  const allTransactions: (ParsedTransaction & { source?: 'bump' | 'helius' })[] = [
+  const allTransactions: ActivityTransaction[] = [
     ...bumpTxs.map(tx => ({
       signature: tx.txId || tx.id,
       timestamp: tx.timestamp,
-      type: 'bump' as const,
+      type: 'bump' as ParsedTransaction['type'],
       description: `Bump ${tx.amount} ${tx.chain}`,
       from: tx.from,
       to: tx.to,
       amount: tx.amount,
       token: tx.chain.toUpperCase(),
       fee: 0,
-      status: tx.status,
+      status: tx.status as ParsedTransaction['status'],
       source: 'bump' as const,
     })),
     ...heliusTxs.map(tx => ({ ...tx, source: 'helius' as const })),

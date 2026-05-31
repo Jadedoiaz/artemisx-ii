@@ -17,7 +17,7 @@ export default function WalletConnectButton() {
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
 
-  const activeChain = useBumpStore((s) => s.activeChain);
+  const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
   // Determine which wallet system to show based on active chain
   const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
@@ -30,7 +30,7 @@ export default function WalletConnectButton() {
   if (!isEVM && solanaConnected && publicKey) {
     return (
       <button
-        onClick={disconnectSolana}
+        onClick={() => disconnectSolana()}
         className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border hover:border-danger rounded-lg text-sm font-medium transition-all text-white hover:text-danger"
         title="Disconnect wallet"
       >
@@ -53,7 +53,7 @@ export default function WalletConnectButton() {
           </button>
         )}
         <button
-          onClick={disconnectEVM}
+          onClick={() => disconnectEVM()}
           className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border hover:border-danger rounded-lg text-sm font-medium transition-all text-white hover:text-danger"
         >
           <LogOut size={16} />

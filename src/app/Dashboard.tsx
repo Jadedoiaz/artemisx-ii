@@ -4,7 +4,7 @@ import { useTokenPrices } from '../hooks/useTokenPrices';
 import { useBumpStore } from '../stores/bumpStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
-import { Zap, TrendingUp, Activity, Clock, Wallet, RefreshCw } from 'lucide-react';
+import { Zap, TrendingUp, TrendingDown, Activity, Clock, Wallet, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 function StatCard({ icon: Icon, label, value, color, loading }: { icon: any; label: string; value: string | number; color: string; loading?: boolean }) {
@@ -31,8 +31,8 @@ export default function Dashboard() {
   const { publicKey } = useWallet();
 
   // EVM
-  const { isConnected: evmConnected, balances: evmBalances } = useEVMWalletData();
-  const { address: evmAddress } = useAccount();
+  const { isConnected: evmConnected, balances: evmBalances, address: evmAddress } = useEVMWalletData();
+  const { address: evmAccount } = useAccount();
 
   // Prices
   const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
@@ -41,6 +41,7 @@ export default function Dashboard() {
   const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 0;
   const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
 
+  // Calculate totals per chain
   const solanaValue = solBalance * solPrice + tokens.reduce((acc, t) => {
     const price = prices[t.mint]?.current_price;
     return acc + (price ? t.balance * price : 0);
@@ -48,6 +49,7 @@ export default function Dashboard() {
 
   const ethBalance = evmBalances.find(b => b.chain === 'ethereum')?.balance || 0;
   const bscBalance = evmBalances.find(b => b.chain === 'bsc')?.balance || 0;
+  // Mock prices for ETH/BNB until CoinGecko integration
   const ethPrice = 3500; // Placeholder
   const bnbPrice = 600;  // Placeholder
 

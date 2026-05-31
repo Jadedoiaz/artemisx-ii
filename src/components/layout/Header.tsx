@@ -1,13 +1,13 @@
 import { Bell } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
-import { useBumpStore } from '../stores/bumpStore';
+import { useBumpStore } from '../../stores/bumpStore';
 import WalletConnectButton from '../wallet/WalletConnectButton';
 
 export default function Header() {
   const { connected: solanaConnected } = useWallet();
   const { isConnected: evmConnected } = useAccount();
-  const activeChain = useBumpStore((s) => s.activeChain);
+  const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
   const totalConnected = (solanaConnected ? 1 : 0) + (evmConnected ? 1 : 0);
 
