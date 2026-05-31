@@ -157,7 +157,7 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div 
-          whileHover={{ y: -2, transition: { duration: 0.2 } }
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
           className="bg-surface border border-border rounded-xl p-4 md:p-5"
         >
           <div className="flex items-center justify-between mb-3">
@@ -174,7 +174,7 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div 
-          whileHover={{ y: -2, transition: { duration: 0.2 } }
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
           className="bg-surface border border-border rounded-xl p-4 md:p-5"
         >
           <div className="flex items-center justify-between mb-3">
