@@ -1,6 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { useBumpStore } from '../../stores/bumpStore';
@@ -44,7 +43,7 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const showWallet = isEVM ? evmConnected : solanaConnected;
   const walletAddress = isEVM ? evmAddress : (publicKey?.toBase58() || null);
 
-  // Auto-close sidebar when route changes
+  // Close sidebar on route change - use location.pathname dependency
   useEffect(() => {
     if (isOpen) {
       onClose();
@@ -52,96 +51,97 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Handle navigation with explicit close for mobile touch
-  const handleNavClick = useCallback((to: string) => {
-    // Close sidebar first
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  const handleNavClick = (to: string) => {
     onClose();
-    // Then navigate - small delay ensures sidebar starts closing before navigation
-    // This prevents the race condition where AnimatePresence unmounts before navigation
-    requestAnimationFrame(() => {
-      navigate(to);
-    });
-  }, [navigate, onClose]);
+    navigate(to);
+  };
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Backdrop - only rendered when open */}
       {isOpen && (
-        <>
-          {/* Backdrop - blocks interaction with main content */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
-            onClick={onClose}
-            onTouchStart={onClose}
-          />
-
-          {/* Sidebar panel */}
-          <motion.aside
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 h-screen w-72 bg-surface border-r border-border z-[70] flex flex-col lg:hidden"
-          >
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <h1 className="text-xl font-bold tracking-tight">
-                <span className="text-accent">Artemis</span> X-II
-              </h1>
-              <button
-                onClick={onClose}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                className="p-2 text-muted hover:text-white transition-colors"
-                aria-label="Close menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {showWallet && walletAddress && (
-              <div className="px-4 py-3 border-b border-border bg-surface-highlight/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <span className="text-xs text-muted">{isEVM ? 'MetaMask' : 'Solana'} Connected</span>
-                </div>
-                <p className="text-xs font-mono text-accent mt-1 truncate">
-                  {formatAddress(walletAddress)}
-                </p>
-              </div>
-            )}
-
-            <nav className="flex-1 p-4 space-y-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.to}
-                  onClick={() => handleNavClick(item.to)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left',
-                    location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to))
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-muted hover:text-white hover:bg-surface-highlight'
-                  )}
-                >
-                  <item.icon size={18} />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-
-            <div className="p-4 border-t border-border">
-              <div className="text-xs text-muted text-center">
-                v2.4.1 Fixed
-              </div>
-            </div>
-          </motion.aside>
-        </>
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden transition-opacity duration-200"
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
-    </AnimatePresence>
+
+      {/* Sidebar panel - CSS transform for GPU-accelerated animation */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 h-screen w-72 bg-surface border-r border-border z-[70] flex flex-col lg:hidden',
+          'transition-transform duration-300 ease-out will-change-transform',
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+        aria-hidden={!isOpen}
+      >
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight">
+            <span className="text-accent">Artemis</span> X-II
+          </h1>
+          <button
+            onClick={onClose}
+            className="p-2 text-muted hover:text-white transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {showWallet && walletAddress && (
+          <div className="px-4 py-3 border-b border-border bg-surface-highlight/50">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span className="text-xs text-muted">{isEVM ? 'MetaMask' : 'Solana'} Connected</span>
+            </div>
+            <p className="text-xs font-mono text-accent mt-1 truncate">
+              {formatAddress(walletAddress)}
+            </p>
+          </div>
+        )}
+
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map((item) => {
+            const isActive =
+              location.pathname === item.to ||
+              (item.to !== '/' && location.pathname.startsWith(item.to));
+
+            return (
+              <button
+                key={item.to}
+                onClick={() => handleNavClick(item.to)}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left',
+                  isActive
+                    ? 'bg-accent/10 text-accent'
+                    : 'text-muted hover:text-white hover:bg-surface-highlight'
+                )}
+              >
+                <item.icon size={18} />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-border">
+          <div className="text-xs text-muted text-center">v2.4.2 Mobile Fix</div>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -149,12 +149,9 @@ export function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      onTouchStart={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className="lg:hidden p-2 text-muted hover:text-white transition-colors"
+      className="lg:hidden p-2 text-muted hover:text-white transition-colors active:scale-95"
       aria-label="Open menu"
+      type="button"
     >
       <Menu size={20} />
     </button>

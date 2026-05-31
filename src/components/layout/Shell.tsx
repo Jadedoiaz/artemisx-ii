@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileSidebar from './MobileSidebar';
@@ -9,18 +8,6 @@ import { useAccentColor } from '../../hooks/useAccentColor';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { applyAccentColor } from '../../hooks/useAccentColor';
 
-const pageVariants: Variants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-};
-
-const pageTransition = {
-  type: 'tween' as const,
-  ease: 'easeInOut' as const,
-  duration: 0.25,
-};
-
 export default function Shell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -28,7 +15,7 @@ export default function Shell() {
   // Activate accent color system
   useAccentColor();
 
-  // Also apply accent color immediately on mount (prevents flash of default purple)
+  // Apply accent color immediately on mount (prevents flash of default purple)
   useEffect(() => {
     const stored = useSettingsStore.getState().accentColor;
     applyAccentColor(stored);
@@ -43,7 +30,7 @@ export default function Shell() {
         <Sidebar />
       </div>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar - CSS-based, no AnimatePresence */}
       <MobileSidebar
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
@@ -54,18 +41,13 @@ export default function Shell() {
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
         <main className="p-4 md:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={pageTransition}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          {/* Simple fade transition - no mode="wait" deadlock */}
+          <div
+            key={location.pathname}
+            className="animate-fade-in"
+          >
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
