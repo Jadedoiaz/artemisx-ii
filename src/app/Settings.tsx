@@ -62,25 +62,25 @@ export const Settings: React.FC = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-3xl space-y-6">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-theme-primary">Settings</h1>
-        <p className="mt-1 text-sm text-theme-muted">Configure your API keys, preferences, and appearance.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Configure your API keys, preferences, and appearance.</p>
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex items-center gap-2">
-          <Palette size={18} className="text-theme-secondary" />
-          <h2 className="font-semibold text-theme-primary">Appearance</h2>
+          <Palette size={18} className="text-slate-500 dark:text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">Appearance</h2>
         </div>
         <div className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-theme-secondary">Theme</label>
+            <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400">Theme</label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => { setTheme('dark'); applyTheme('dark'); }}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                   theme === 'dark'
-                    ? 'border-purple-500 bg-purple-500/10 text-purple-400'
-                    : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                    ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
                 <Moon size={16} /> Dark
@@ -89,8 +89,8 @@ export const Settings: React.FC = () => {
                 onClick={() => { setTheme('light'); applyTheme('light'); }}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                   theme === 'light'
-                    ? 'border-purple-500 bg-purple-500/10 text-purple-400'
-                    : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                    ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
                 <Sun size={16} /> Light
@@ -99,7 +99,7 @@ export const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-theme-secondary">Accent Color</label>
+            <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400">Accent Color</label>
             <div className="flex flex-wrap gap-3">
               {colors.map((c) => (
                 <button
@@ -118,38 +118,38 @@ export const Settings: React.FC = () => {
         </div>
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex items-center gap-2">
-          <Key size={18} className="text-theme-secondary" />
-          <h2 className="font-semibold text-theme-primary">API Keys</h2>
+          <Key size={18} className="text-slate-500 dark:text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">API Keys</h2>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Helius API Key</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Helius API Key</label>
             <input
               type="password"
               value={heliusApiKey}
               onChange={(e) => setHeliusApiKey(e.target.value)}
               placeholder="Enter your Helius API key"
-              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
             />
-            <p className="mt-1 text-xs text-theme-muted">Required for live portfolio data, NFT gallery, and transaction history.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Required for live portfolio data, NFT gallery, and transaction history.</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Discord Webhook URL</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Discord Webhook URL</label>
             <div className="flex gap-2">
               <input
                 type="url"
                 value={discordWebhookUrl}
                 onChange={(e) => setDiscordWebhookUrl(e.target.value)}
                 placeholder="https://discord.com/api/webhooks/..."
-                className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
               />
               <button
                 onClick={handleTestWebhook}
                 disabled={!discordWebhookUrl}
-                className="rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-secondary transition-colors hover:bg-theme-primary hover:text-white disabled:opacity-40"
+                className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
               >
                 {testStatus === 'success' ? 'Sent!' : testStatus === 'error' ? 'Failed' : 'Test'}
               </button>
@@ -157,64 +157,64 @@ export const Settings: React.FC = () => {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Solana RPC URL</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Solana RPC URL</label>
             <div className="flex items-center gap-2">
-              <Link2 size={14} className="text-theme-muted" />
+              <Link2 size={14} className="text-slate-400 dark:text-slate-500" />
               <input
                 type="url"
                 value={solanaRpcUrl}
                 onChange={(e) => setSolanaRpcUrl(e.target.value)}
                 placeholder="https://api.mainnet-beta.solana.com"
-                className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary placeholder:text-theme-muted focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
           </div>
         </div>
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex items-center gap-2">
-          <Zap size={18} className="text-theme-secondary" />
-          <h2 className="font-semibold text-theme-primary">Bump Engine</h2>
+          <Zap size={18} className="text-slate-500 dark:text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">Bump Engine</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Max Bump Amount (lamports)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Max Bump Amount (lamports)</label>
             <input
               type="number"
               value={maxBumpAmount}
               onChange={(e) => setMaxBumpAmount(Number(e.target.value))}
-              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
-            <p className="mt-1 text-xs text-theme-muted">Safety cap per transaction. 1000 lamports = ~0.001 SOL.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Safety cap per transaction. 1000 lamports = ~0.001 SOL.</p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Cooldown (ms)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Cooldown (ms)</label>
             <input
               type="number"
               value={cooldownMs}
               onChange={(e) => setCooldownMs(Number(e.target.value))}
-              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
-            <p className="mt-1 text-xs text-theme-muted">Minimum delay between bumps in milliseconds.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Minimum delay between bumps in milliseconds.</p>
           </div>
         </div>
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex items-center gap-2">
-          <Bell size={18} className="text-theme-secondary" />
-          <h2 className="font-semibold text-theme-primary">Notifications</h2>
+          <Bell size={18} className="text-slate-500 dark:text-slate-400" />
+          <h2 className="font-semibold text-slate-900 dark:text-white">Notifications</h2>
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-theme-primary">Push Notifications</p>
-            <p className="text-xs text-theme-muted">Browser alerts when bumps complete or fail.</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white">Push Notifications</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Browser alerts when bumps complete or fail.</p>
           </div>
           <button
             onClick={() => setNotificationsEnabled(!notificationsEnabled)}
             className={`relative h-6 w-11 rounded-full transition-colors ${
-              notificationsEnabled ? 'bg-purple-500' : 'bg-slate-600'
+              notificationsEnabled ? 'bg-purple-500' : 'bg-slate-400 dark:bg-slate-600'
             }`}
           >
             <span

@@ -58,11 +58,11 @@ export const BumpCenter: React.FC = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-2xl space-y-6">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-theme-primary">Bump Center</h1>
-        <p className="mt-1 text-sm text-theme-muted">Configure and execute your bumps.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bump Center</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Configure and execute your bumps.</p>
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-4 flex gap-2">
           {(['solana', 'bsc', 'ethereum'] as const).map((c) => (
             <button
@@ -70,8 +70,8 @@ export const BumpCenter: React.FC = () => {
               onClick={() => handleChainChange(c)}
               className={`rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors ${
                 chain === c
-                  ? 'border-purple-500 bg-purple-500/10 text-purple-400'
-                  : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                  ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               {c}
@@ -81,23 +81,23 @@ export const BumpCenter: React.FC = () => {
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Amount {isSolana ? '(SOL)' : '(ETH/BNB)'}</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Amount {isSolana ? '(SOL)' : '(ETH/BNB)'}</label>
             <input
               type="number"
               step={isSolana ? 0.001 : 0.0001}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-theme-secondary">Interval (seconds)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Interval (seconds)</label>
             <input
               type="number"
               value={interval}
               onChange={(e) => setInterval(Number(e.target.value))}
-              className="w-full rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
           </div>
 
@@ -113,7 +113,7 @@ export const BumpCenter: React.FC = () => {
             {engine.autoBump ? (
               <button
                 onClick={engine.stopAuto}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20"
               >
                 <Square size={16} />
                 Stop Auto
@@ -122,7 +122,7 @@ export const BumpCenter: React.FC = () => {
               <button
                 onClick={handleStartAuto}
                 disabled={!connected}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-theme bg-theme-secondary px-4 py-2.5 text-sm font-medium text-theme-primary transition-colors hover:bg-theme-primary hover:text-white disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-200 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
               >
                 <Play size={16} />
                 Start Auto

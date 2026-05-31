@@ -34,13 +34,13 @@ export const Analytics: React.FC = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-theme-primary">Analytics</h1>
-        <p className="mt-1 text-sm text-theme-muted">Visualize your bumping performance.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Analytics</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Visualize your bumping performance.</p>
       </motion.div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
-          <h2 className="mb-4 font-semibold text-theme-primary">Bumps by Chain</h2>
+        <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="mb-4 font-semibold text-slate-900 dark:text-white">Bumps by Chain</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chainData.length ? chainData : [{ name: 'No Data', value: 0 }]}>
@@ -53,8 +53,8 @@ export const Analytics: React.FC = () => {
           </div>
         </motion.div>
 
-        <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
-          <h2 className="mb-4 font-semibold text-theme-primary">Success Rate</h2>
+        <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="mb-4 font-semibold text-slate-900 dark:text-white">Success Rate</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

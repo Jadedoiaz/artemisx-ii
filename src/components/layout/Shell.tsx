@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Header } from './Header';
 import Sidebar from './Sidebar';
 import MobileSidebar from './MobileSidebar';
@@ -22,28 +21,19 @@ export const Shell: React.FC = () => {
   }, [theme]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-theme-primary text-theme-primary">
+    <div className={`flex h-screen w-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100`}>
       <aside className="hidden lg:block">
         <Sidebar />
       </aside>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-        )}
-      </AnimatePresence>
+      {mobileOpen && (
+        <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      )}
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          {/* initial={false} prevents Framer Motion from starting at opacity:0 */}
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <Outlet />
-          </motion.div>
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 dark:bg-slate-950 lg:p-8">
+          <Outlet />
         </main>
       </div>
     </div>

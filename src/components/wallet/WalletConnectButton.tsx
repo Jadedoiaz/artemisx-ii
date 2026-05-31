@@ -35,7 +35,7 @@ export default function WalletConnectButton() {
       <select
         value={activeChain}
         onChange={(e) => setActiveChain(e.target.value)}
-        className="rounded-lg border border-theme bg-theme-secondary px-2 py-1.5 text-xs text-theme-primary"
+        className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
       >
         <option value="solana">Solana</option>
         <option value="bsc">BSC</option>
@@ -44,7 +44,7 @@ export default function WalletConnectButton() {
       {connected && address ? (
         <button
           onClick={handleDisconnect}
-          className="flex items-center gap-2 rounded-lg border border-theme bg-theme-secondary px-3 py-2 text-sm text-theme-primary transition-colors hover:bg-red-500/10 hover:text-red-400"
+          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 transition-colors hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-400"
         >
           <span className="max-w-[100px] truncate">{address.slice(0, 6)}...{address.slice(-4)}</span>
           <LogOut size={14} />

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -8,20 +7,12 @@ export const ThemeToggle: React.FC = () => {
   const isDark = theme === 'dark';
 
   return (
-    <motion.button
+    <button
       onClick={toggle}
-      whileTap={{ scale: 0.92 }}
-      className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-theme bg-theme-secondary text-theme-secondary transition-colors hover:text-theme-primary"
+      className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      <motion.div
-        key={isDark ? 'moon' : 'sun'}
-        initial={false}
-        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-      >
-        {isDark ? <Moon size={18} /> : <Sun size={18} />}
-      </motion.div>
-    </motion.button>
+      {isDark ? <Moon size={18} /> : <Sun size={18} />}
+    </button>
   );
 };

@@ -30,8 +30,8 @@ export const Portfolio: React.FC = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-theme-primary">Portfolio</h1>
-        <p className="mt-1 text-sm text-theme-muted">Your token holdings across chains.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Portfolio</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your token holdings across chains.</p>
       </motion.div>
 
       <motion.div variants={item} className="flex gap-2">
@@ -41,8 +41,8 @@ export const Portfolio: React.FC = () => {
             onClick={() => setTab(t)}
             className={`rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors ${
               tab === t
-                ? 'border-purple-500 bg-purple-500/10 text-purple-400'
-                : 'border-theme bg-theme-secondary text-theme-secondary hover:text-theme-primary'
+                ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
             }`}
           >
             {t}
@@ -50,10 +50,10 @@ export const Portfolio: React.FC = () => {
         ))}
       </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card">
+      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-theme text-theme-secondary">
+            <thead className="border-b border-slate-200 text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Token</th>
                 <th className="px-4 py-3 font-medium">Balance</th>
@@ -62,17 +62,17 @@ export const Portfolio: React.FC = () => {
                 <th className="px-4 py-3 font-medium">24h</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-theme">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {tokens.map((token) => (
-                <tr key={token.symbol} className="text-theme-primary">
+                <tr key={token.symbol} className="text-slate-900 dark:text-white">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-${accentColor}-500 text-white text-xs font-bold`}>
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-${accentColor}-500 text-xs font-bold text-white`}>
                         {token.symbol[0]}
                       </div>
                       <div>
                         <p className="font-medium">{token.symbol}</p>
-                        <p className="text-xs text-theme-muted">{token.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{token.name}</p>
                       </div>
                     </div>
                   </td>
@@ -81,7 +81,7 @@ export const Portfolio: React.FC = () => {
                   <td className="px-4 py-3">${(token.balance * token.price).toFixed(2)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                      token.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      token.change >= 0 ? 'text-emerald-500' : 'text-red-500'
                     }`}>
                       {token.change >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                       {Math.abs(token.change)}%
