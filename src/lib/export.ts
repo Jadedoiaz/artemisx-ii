@@ -1,4 +1,4 @@
-import { Transaction } from '../stores/bumpStore';
+import { Transaction } from '../types';
 import { ParsedTransaction } from './api';
 
 export interface ExportRow {
