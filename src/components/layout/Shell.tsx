@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import MobileSidebar, { MobileMenuButton } from './MobileSidebar';
+import MobileSidebar from './MobileSidebar';
 import AnimatedBackground from './AnimatedBackground';
 
-const pageVariants = {
+const pageVariants: Variants = {
   initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -10 },
 };
 
 const pageTransition = {
-  type: 'tween',
-  ease: 'easeInOut',
+  type: 'tween' as const,
+  ease: 'easeInOut' as const,
   duration: 0.25,
 };
 
