@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { useBumpStore } from '../../stores/bumpStore';
@@ -24,30 +24,35 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-// Route component map for preloading
-const routePreloads: Record<string, () => Promise<any>> = {
-  '/': () => import('../../app/Dashboard'),
-  '/bump': () => import('../../app/BumpCenter'),
-  '/portfolio': () => import('../../app/Portfolio'),
-  '/nfts': () => import('../../app/NFTGallery'),
-  '/activity': () => import('../../app/Activity'),
-  '/analytics': () => import('../../app/Analytics'),
-  '/settings': () => import('../../app/Settings'),
-};
-
 export default function Sidebar() {
+  const location = useLocation();
   const { publicKey, connected: solanaConnected } = useWallet();
   const { address: evmAddress, isConnected: evmConnected } = useAccount();
   const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
+  // FIX: Check both connected flag AND actual address exists
+  const isSolanaReallyConnected = solanaConnected && !!publicKey;
+  const isEVMReallyConnected = evmConnected && !!evmAddress;
+
   const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
-  const showWallet = isEVM ? evmConnected : solanaConnected;
+  const showWallet = isEVM ? isEVMReallyConnected : isSolanaReallyConnected;
   const walletAddress = isEVM ? evmAddress : (publicKey?.toBase58() || null);
 
+  // Preload route components on hover for faster navigation
   const handleMouseEnter = (to: string) => {
-    const preload = routePreloads[to];
+    const preloads: Record<string, () => Promise<any>> = {
+      '/': () => import('../../app/Dashboard'),
+      '/bump': () => import('../../app/BumpCenter'),
+      '/portfolio': () => import('../../app/Portfolio'),
+      '/nfts': () => import('../../app/NFTGallery'),
+      '/activity': () => import('../../app/Activity'),
+      '/analytics': () => import('../../app/Analytics'),
+      '/settings': () => import('../../app/Settings'),
+    };
+    const preload = preloads[to];
     if (preload) {
-      preload();
+      // Fire and forget - preload the module
+      preload().catch(() => {});
     }
   };
 
@@ -73,29 +78,32 @@ export default function Sidebar() {
       )}
 
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            onMouseEnter={() => handleMouseEnter(item.to)}
-            className={({ isActive }) =>
-              cn(
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.to ||
+            (item.to !== '/' && location.pathname.startsWith(item.to));
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onMouseEnter={() => handleMouseEnter(item.to)}
+              className={cn(
                 'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-accent/10 text-accent'
+                  ? 'bg-accent-10 text-accent'
                   : 'text-muted hover:text-white hover:bg-surface-highlight'
-              )
-            }
-          >
-            <item.icon size={18} />
-            {item.label}
-          </NavLink>
-        ))}
+              )}
+            >
+              <item.icon size={18} />
+              {item.label}
+            </NavLink>
+          );
+        })}
       </nav>
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted text-center">
-          v2.3.1 Optimized
+          v2.4.1 Fixed
         </div>
       </div>
     </aside>

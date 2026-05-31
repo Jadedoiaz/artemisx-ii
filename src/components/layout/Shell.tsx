@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileSidebar from './MobileSidebar';
 import AnimatedBackground from './AnimatedBackground';
+import { useAccentColor } from '../../hooks/useAccentColor';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { applyAccentColor } from '../../hooks/useAccentColor';
 
 const pageVariants: Variants = {
   initial: { opacity: 0, y: 10 },
@@ -22,6 +25,15 @@ export default function Shell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  // Activate accent color system
+  useAccentColor();
+
+  // Also apply accent color immediately on mount (prevents flash of default purple)
+  useEffect(() => {
+    const stored = useSettingsStore.getState().accentColor;
+    applyAccentColor(stored);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-[#0a0a0f] relative">
       <AnimatedBackground />
@@ -32,9 +44,9 @@ export default function Shell() {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)} 
+      <MobileSidebar
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
       />
 
       {/* Main content */}

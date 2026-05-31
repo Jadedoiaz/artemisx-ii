@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Dynamic accent color - defaults to purple */
+  --accent-color: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-rgb: 124, 58, 237;
+}
+
 @layer base {
   body {
     font-family: 'Inter', system-ui, sans-serif;
@@ -20,6 +27,28 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #334155;
   }
+}
+
+/* Utility classes for dynamic accent color */
+.text-accent {
+  color: var(--accent-color) !important;
+}
+.bg-accent {
+  background-color: var(--accent-color) !important;
+}
+.bg-accent-hover:hover {
+  background-color: var(--accent-hover) !important;
+}
+.border-accent {
+  border-color: var(--accent-color) !important;
+}
+.ring-accent {
+  --tw-ring-color: var(--accent-color) !important;
+}
+
+/* Accent color variations for backgrounds with opacity */
+.bg-accent-10 {
+  background-color: rgba(var(--accent-rgb), 0.1) !important;
 }
 
 /* Solana Wallet Adapter UI Overrides - Force dark theme */

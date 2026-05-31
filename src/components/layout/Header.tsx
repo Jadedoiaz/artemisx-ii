@@ -4,17 +4,23 @@ import { useAccount } from 'wagmi';
 import { useBumpStore } from '../../stores/bumpStore';
 import WalletConnectButton from '../wallet/WalletConnectButton';
 import { MobileMenuButton } from './MobileSidebar';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
 export default function Header({ onMenuToggle }: HeaderProps) {
-  const { connected: solanaConnected } = useWallet();
-  const { isConnected: evmConnected } = useAccount();
+  const { publicKey, connected: solanaConnected } = useWallet();
+  const { address: evmAddress, isConnected: evmConnected } = useAccount();
   const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
-  const totalConnected = (solanaConnected ? 1 : 0) + (evmConnected ? 1 : 0);
+  // FIX: Check both connected flag AND actual address/publicKey exists
+  // This prevents stale publicKey from showing as "connected"
+  const isSolanaReallyConnected = solanaConnected && !!publicKey;
+  const isEVMReallyConnected = evmConnected && !!evmAddress;
+
+  const totalConnected = (isSolanaReallyConnected ? 1 : 0) + (isEVMReallyConnected ? 1 : 0);
 
   return (
     <header className="h-16 bg-surface/80 backdrop-blur border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">

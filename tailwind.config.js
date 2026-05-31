@@ -9,8 +9,8 @@ export default {
           highlight: '#1a1a2e',
         },
         accent: {
-          DEFAULT: '#7c3aed',
-          hover: '#6d28d9',
+          DEFAULT: 'var(--accent-color, #7c3aed)',
+          hover: 'var(--accent-hover, #6d28d9)',
         },
         border: '#1e293b',
         success: '#22c55e',
