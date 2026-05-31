@@ -1,156 +1,82 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useBumpStore } from '../stores/bumpStore';
-import { useEffect, useState } from 'react';
-import ActivityHeatmap from '../components/analytics/ActivityHeatmap';
 
-const weeklyData = [
-  { day: 'Mon', bumps: 12 },
-  { day: 'Tue', bumps: 19 },
-  { day: 'Wed', bumps: 8 },
-  { day: 'Thu', bumps: 24 },
-  { day: 'Fri', bumps: 15 },
-  { day: 'Sat', bumps: 32 },
-  { day: 'Sun', bumps: 18 },
-];
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
 
-// Dynamically import recharts components
-let RechartsModule: any = null;
+const item = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
 
-export default function Analytics() {
-  const { bumpCount, successCount, transactions } = useBumpStore();
-  const [chartsLoaded, setChartsLoaded] = useState(false);
+const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
-  // Extract timestamps for heatmap
-  const timestamps = transactions.map(t => t.timestamp);
+export const Analytics: React.FC = () => {
+  const bumpCount = useBumpStore((s) => s.bumpCount);
+  const successCount = useBumpStore((s) => s.successCount);
+  const transactions = useBumpStore((s) => s.transactions);
 
-  // Lazy load recharts on mount
-  useEffect(() => {
-    let cancelled = false;
-    import('recharts').then((mod) => {
-      if (!cancelled) {
-        RechartsModule = mod;
-        setChartsLoaded(true);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const chainData = [
+    { name: 'Solana', value: transactions.filter((t) => t.chain === 'solana').length },
+    { name: 'BSC', value: transactions.filter((t) => t.chain === 'bsc').length },
+    { name: 'Ethereum', value: transactions.filter((t) => t.chain === 'ethereum').length },
+  ].filter((d) => d.value > 0);
 
-  // Calculate chain distribution from actual transactions
-  const solanaTxs = transactions.filter(t => t.chain === 'solana').length;
-  const bscTxs = transactions.filter(t => t.chain === 'bsc').length;
-  const ethTxs = transactions.filter(t => t.chain === 'ethereum').length;
-  const total = Math.max(solanaTxs + bscTxs + ethTxs, 1);
-
-  const realChainData = [
-    { name: 'Solana', value: Math.round((solanaTxs / total) * 100) || 33, color: '#7c3aed' },
-    { name: 'BSC', value: Math.round((bscTxs / total) * 100) || 33, color: '#eab308' },
-    { name: 'Ethereum', value: Math.round((ethTxs / total) * 100) || 34, color: '#3b82f6' },
+  const statusData = [
+    { name: 'Success', value: successCount },
+    { name: 'Failed', value: bumpCount - successCount },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-muted mt-1">Performance metrics and insights</p>
-      </div>
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+      <motion.div variants={item}>
+        <h1 className="text-2xl font-bold text-theme-primary">Analytics</h1>
+        <p className="mt-1 text-sm text-theme-muted">Visualize your bumping performance.</p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-surface border border-border rounded-xl p-6">
-          <p className="text-sm text-muted mb-1">Total Bumps</p>
-          <p className="text-3xl font-bold">{bumpCount}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-xl p-6">
-          <p className="text-sm text-muted mb-1">Successful</p>
-          <p className="text-3xl font-bold text-success">{successCount}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-xl p-6">
-          <p className="text-sm text-muted mb-1">Success Rate</p>
-          <p className="text-3xl font-bold">
-            {bumpCount > 0 ? ((successCount / bumpCount) * 100).toFixed(1) : 0}%
-          </p>
-        </div>
-      </div>
-
-      {/* Activity Heatmap */}
-      <ActivityHeatmap timestamps={timestamps} weeksBack={26} />
-
-      {!chartsLoaded && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-surface border border-border rounded-xl p-6 h-[320px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-muted">Loading charts...</p>
-            </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+          <h2 className="mb-4 font-semibold text-theme-primary">Bumps by Chain</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chainData.length ? chainData : [{ name: 'No Data', value: 0 }]}>
+                <XAxis dataKey="name" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <div className="bg-surface border border-border rounded-xl p-6 h-[320px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-muted">Loading charts...</p>
-            </div>
-          </div>
-        </div>
-      )}
+        </motion.div>
 
-      {chartsLoaded && RechartsModule && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-surface border border-border rounded-xl p-6">
-            <h3 className="font-semibold mb-4">Weekly Activity</h3>
-            <RechartsModule.ResponsiveContainer width="100%" height={250}>
-              <RechartsModule.BarChart data={weeklyData}>
-                <RechartsModule.CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <RechartsModule.XAxis dataKey="day" stroke="#64748b" fontSize={12} />
-                <RechartsModule.YAxis stroke="#64748b" fontSize={12} />
-                <RechartsModule.Tooltip
-                  contentStyle={{
-                    background: '#12121a',
-                    border: '1px solid #1e293b',
-                    borderRadius: '8px',
-                    color: '#f1f5f9',
-                  }}
-                />
-                <RechartsModule.Bar dataKey="bumps" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-              </RechartsModule.BarChart>
-            </RechartsModule.ResponsiveContainer>
-          </div>
-
-          <div className="bg-surface border border-border rounded-xl p-6">
-            <h3 className="font-semibold mb-4">Chain Distribution</h3>
-            <RechartsModule.ResponsiveContainer width="100%" height={250}>
-              <RechartsModule.PieChart>
-                <RechartsModule.Pie
-                  data={realChainData}
+        <motion.div variants={item} className="rounded-xl border border-theme bg-theme-card p-5">
+          <h2 className="mb-4 font-semibold text-theme-primary">Success Rate</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={4}
+                  outerRadius={80}
+                  paddingAngle={5}
                   dataKey="value"
                 >
-                  {realChainData.map((entry: any, index: number) => (
-                    <RechartsModule.Cell key={`cell-${index}`} fill={entry.color} />
+                  {statusData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
-                </RechartsModule.Pie>
-                <RechartsModule.Tooltip
-                  contentStyle={{
-                    background: '#12121a',
-                    border: '1px solid #1e293b',
-                    borderRadius: '8px',
-                    color: '#f1f5f9',
-                  }}
-                />
-              </RechartsModule.PieChart>
-            </RechartsModule.ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-4 flex-wrap">
-              {realChainData.map((c) => (
-                <div key={c.name} className="flex items-center gap-2 text-sm">
-                  <span className="w-3 h-3 rounded-full" style={{ background: c.color }} />
-                  <span className="text-muted">{c.name}</span>
-                  <span className="text-white font-mono">{c.value}%</span>
-                </div>
-              ))}
-            </div>
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-      )}
-    </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
-}
+};

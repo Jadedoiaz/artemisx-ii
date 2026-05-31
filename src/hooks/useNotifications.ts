@@ -1,60 +1,36 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  requestNotificationPermission,
-  sendNotification,
   isNotificationSupported,
+  requestNotificationPermission,
   getNotificationPermission,
+  sendNotification,
   NotificationOptions,
 } from '../lib/notifications';
 import { useSettingsStore } from '../stores/settingsStore';
 
 export function useNotifications() {
-  const { notificationsEnabled, setNotificationsEnabled } = useSettingsStore();
-  const [permission, setPermission] = useState<NotificationPermission | null>(
-    getNotificationPermission()
-  );
-  const [supported, setSupported] = useState(isNotificationSupported());
+  const [supported, setSupported] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const enabled = useSettingsStore((s) => s.notificationsEnabled);
+  const setEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
 
   useEffect(() => {
-    setPermission(getNotificationPermission());
     setSupported(isNotificationSupported());
+    setPermission(getNotificationPermission());
   }, []);
 
   const enable = useCallback(async () => {
-    if (!supported) return false;
     const granted = await requestNotificationPermission();
-    if (granted) {
-      setNotificationsEnabled(true);
-      setPermission('granted');
-      sendNotification({
-        title: 'Artemis X-II',
-        body: 'Push notifications enabled successfully',
-      });
-    } else {
-      setPermission('denied');
-    }
+    setPermission(getNotificationPermission());
+    setEnabled(granted);
     return granted;
-  }, [supported, setNotificationsEnabled]);
+  }, [setEnabled]);
 
-  const disable = useCallback(() => {
-    setNotificationsEnabled(false);
-  }, [setNotificationsEnabled]);
+  const notify = useCallback((options: NotificationOptions) => {
+    if (enabled) {
+      sendNotification(options);
+    }
+  }, [enabled]);
 
-  const notify = useCallback(
-    (options: NotificationOptions) => {
-      if (notificationsEnabled && permission === 'granted') {
-        sendNotification(options);
-      }
-    },
-    [notificationsEnabled, permission]
-  );
-
-  return {
-    supported,
-    permission,
-    enabled: notificationsEnabled,
-    enable,
-    disable,
-    notify,
-  };
+  return { supported, permission, enabled, enable, notify };
 }

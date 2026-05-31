@@ -21,8 +21,8 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngi
   const { data: walletClient } = useWalletClient();
   const { maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore();
   const addTx = useBumpStore((s) => s.addTransaction);
+  const setBumping = useBumpStore((s) => s.setBumping);
 
-  const [isBumping, setIsBumping] = useState(false);
   const [autoBump, setAutoBump] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -30,7 +30,7 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngi
     if (!address || !walletClient) return;
     const safeAmount = Math.min(amountEth, maxBumpAmount / 1e9);
     const wei = parseEther(String(safeAmount));
-    setIsBumping(true);
+    setBumping(true);
 
     try {
       const tx = await walletClient.sendTransaction({
@@ -50,7 +50,7 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngi
         to: address,
       });
 
-      sendNotification('Bump Successful', `Sent ${safeAmount} ${chain === 'bsc' ? 'BNB' : 'ETH'} on ${chain}`);
+      sendNotification({ title: 'Bump Successful', body: `Sent ${safeAmount} ${chain === 'bsc' ? 'BNB' : 'ETH'} on ${chain}` });
 
       if (discordWebhookUrl) {
         const explorer = chain === 'bsc' ? 'https://bscscan.com/tx/' : 'https://etherscan.io/tx/';
@@ -71,16 +71,16 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngi
         from: address,
         to: address,
       });
-      sendNotification('Bump Failed', err.message || 'Transaction failed');
+      sendNotification({ title: 'Bump Failed', body: err.message || 'Transaction failed' });
     } finally {
-      setIsBumping(false);
+      setBumping(false);
     }
-  }, [address, walletClient, chain, maxBumpAmount, addTx, discordWebhookUrl]);
+  }, [address, walletClient, chain, maxBumpAmount, addTx, discordWebhookUrl, setBumping]);
 
   const startAuto = useCallback((amountEth: number, intervalSec: number) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setAutoBump(true);
-    sendNotification('Auto-Bump Started', `Sending every ${intervalSec}s`);
+    sendNotification({ title: 'Auto-Bump Started', body: `Sending every ${intervalSec}s` });
     intervalRef.current = setInterval(() => {
       bump(amountEth);
     }, Math.max(intervalSec * 1000, cooldownMs));
@@ -89,13 +89,13 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngi
   const stopAuto = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setAutoBump(false);
-    sendNotification('Auto-Bump Stopped', 'Manual stop triggered');
+    sendNotification({ title: 'Auto-Bump Stopped', body: 'Manual stop triggered' });
   }, []);
 
   return {
     bump,
     sendBump: bump,
-    isBumping,
+    isBumping: false,
     autoBump,
     startAuto,
     startAutoBump: startAuto,

@@ -10,7 +10,14 @@ export interface NFTItem {
   listed?: boolean;
 }
 
-export function useNFTs(walletAddress?: string) {
+export interface NFTResult {
+  nfts: NFTItem[];
+  collections: (string | undefined)[];
+  loading: boolean;
+  error: string | null;
+}
+
+export function useNFTs(walletAddress?: string): NFTResult {
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +26,7 @@ export function useNFTs(walletAddress?: string) {
   useEffect(() => {
     if (!walletAddress || !heliusApiKey) {
       setNfts([]);
+      setError(null);
       return;
     }
     setLoading(true);

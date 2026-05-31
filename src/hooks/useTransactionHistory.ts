@@ -3,6 +3,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 
 export interface ParsedTransaction {
   id: string;
+  signature: string;
   chain: string;
   type: 'bump' | 'transfer' | 'swap' | 'nft' | 'stake' | 'unknown';
   amount: number;
@@ -12,6 +13,9 @@ export interface ParsedTransaction {
   from: string;
   to: string;
   txId?: string;
+  description: string;
+  fee: number;
+  source: 'bump' | 'helius';
 }
 
 export interface TransactionHistoryResult {
@@ -22,14 +26,14 @@ export interface TransactionHistoryResult {
 }
 
 export function useTransactionHistory(walletAddress?: string): TransactionHistoryResult {
-  const [txs, setTxs] = useState<ParsedTransaction[]>([]);
+  const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const heliusApiKey = useSettingsStore((s) => s.heliusApiKey);
 
   const fetchTxs = useCallback(() => {
     if (!walletAddress || !heliusApiKey) {
-      setTxs([]);
+      setTransactions([]);
       setError(null);
       return;
     }
@@ -50,6 +54,7 @@ export function useTransactionHistory(walletAddress?: string): TransactionHistor
         const sigs = data.result || [];
         const parsed: ParsedTransaction[] = sigs.map((sig: any) => ({
           id: sig.signature,
+          signature: sig.signature,
           chain: 'solana',
           type: classifyType(sig),
           amount: 0,
@@ -59,13 +64,16 @@ export function useTransactionHistory(walletAddress?: string): TransactionHistor
           from: walletAddress,
           to: walletAddress,
           txId: sig.signature,
+          description: sig.description || 'Transaction',
+          fee: sig.fee || 0,
+          source: 'helius' as const,
         }));
-        setTxs(parsed);
+        setTransactions(parsed);
         setError(null);
       })
       .catch((e) => {
         setError(e.message);
-        setTxs([]);
+        setTransactions([]);
       })
       .finally(() => setLoading(false));
   }, [walletAddress, heliusApiKey]);
@@ -74,7 +82,7 @@ export function useTransactionHistory(walletAddress?: string): TransactionHistor
     fetchTxs();
   }, [fetchTxs]);
 
-  return { transactions: txs, loading, error, refetch: fetchTxs };
+  return { transactions, loading, error, refetch: fetchTxs };
 }
 
 function classifyType(sig: any): ParsedTransaction['type'] {

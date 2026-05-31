@@ -20,15 +20,15 @@ export function useBumpEngine(): BumpEngine {
   const { publicKey, signTransaction } = useWallet();
   const { solanaRpcUrl, maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore();
   const addTx = useBumpStore((s) => s.addTransaction);
+  const setBumping = useBumpStore((s) => s.setBumping);
 
-  const [isBumping, setIsBumping] = useState(false);
   const [autoBump, setAutoBump] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const bump = useCallback(async (amountLamports: number) => {
     if (!publicKey || !signTransaction) return;
     const safeAmount = Math.min(amountLamports, maxBumpAmount);
-    setIsBumping(true);
+    setBumping(true);
 
     try {
       const connection = new Connection(solanaRpcUrl, 'confirmed');
@@ -59,7 +59,7 @@ export function useBumpEngine(): BumpEngine {
         to: publicKey.toBase58(),
       });
 
-      sendNotification('Bump Successful', `Sent ${(safeAmount / 1e9).toFixed(4)} SOL on Solana`);
+      sendNotification({ title: 'Bump Successful', body: `Sent ${(safeAmount / 1e9).toFixed(4)} SOL on Solana` });
 
       if (discordWebhookUrl) {
         fetch(discordWebhookUrl, {
@@ -79,16 +79,16 @@ export function useBumpEngine(): BumpEngine {
         from: publicKey.toBase58(),
         to: publicKey.toBase58(),
       });
-      sendNotification('Bump Failed', err.message || 'Transaction failed');
+      sendNotification({ title: 'Bump Failed', body: err.message || 'Transaction failed' });
     } finally {
-      setIsBumping(false);
+      setBumping(false);
     }
-  }, [publicKey, signTransaction, solanaRpcUrl, maxBumpAmount, addTx, discordWebhookUrl]);
+  }, [publicKey, signTransaction, solanaRpcUrl, maxBumpAmount, addTx, discordWebhookUrl, setBumping]);
 
   const startAuto = useCallback((amountLamports: number, intervalSec: number) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setAutoBump(true);
-    sendNotification('Auto-Bump Started', `Sending every ${intervalSec}s`);
+    sendNotification({ title: 'Auto-Bump Started', body: `Sending every ${intervalSec}s` });
     intervalRef.current = setInterval(() => {
       bump(amountLamports);
     }, Math.max(intervalSec * 1000, cooldownMs));
@@ -97,13 +97,13 @@ export function useBumpEngine(): BumpEngine {
   const stopAuto = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setAutoBump(false);
-    sendNotification('Auto-Bump Stopped', 'Manual stop triggered');
+    sendNotification({ title: 'Auto-Bump Stopped', body: 'Manual stop triggered' });
   }, []);
 
   return {
     bump,
     sendBump: bump,
-    isBumping,
+    isBumping: false, // controlled by store
     autoBump,
     startAuto,
     startAutoBump: startAuto,
