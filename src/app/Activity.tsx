@@ -9,6 +9,7 @@ import { formatTime, shortenTx } from '../lib/utils';
 import { openExternal } from '../lib/tauri';
 import { cn } from '../lib/utils';
 import { ParsedTransaction } from '../lib/api';
+import { Transaction } from '../types';
 
 const statusIcons = {
   success: <CheckCircle size={16} className="text-success" />,
@@ -62,7 +63,7 @@ export default function Activity() {
     : allTransactions.filter(tx => tx.type === filter || (filter === 'bump' && tx.source === 'bump'));
 
   const handleExport = () => {
-    const csv = transactionsToCSV(bumpTxs, heliusTxs);
+    const csv = transactionsToCSV(bumpTxs as Transaction[], heliusTxs);
     const now = new Date().toISOString().split('T')[0];
     downloadCSV(csv, `artemisx-transactions-${now}.csv`);
   };
