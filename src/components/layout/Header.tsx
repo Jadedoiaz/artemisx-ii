@@ -15,7 +15,9 @@ export default function Header() {
           <Bell size={20} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />
         </button>
-        <WalletConnectButton />
+        <div className="min-w-[140px]">
+          <WalletConnectButton />
+        </div>
       </div>
     </header>
   );

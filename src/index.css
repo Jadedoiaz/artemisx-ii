@@ -22,17 +22,34 @@
   }
 }
 
-/* Solana Wallet Adapter UI Overrides */
+/* Solana Wallet Adapter UI Overrides - Force dark theme */
 .wallet-adapter-modal-wrapper {
   background: #12121a !important;
   border: 1px solid #1e293b !important;
   border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+.wallet-adapter-modal-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
 }
 .wallet-adapter-modal-title {
   color: #f1f5f9 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 .wallet-adapter-modal-list {
   background: #12121a !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  background: #1a1a2e !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 8px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: #7c3aed20 !important;
+  border-color: #7c3aed !important;
 }
 .wallet-adapter-modal-list-more {
   color: #64748b !important;
@@ -43,9 +60,11 @@
 .wallet-adapter-dropdown-list {
   background: #12121a !important;
   border: 1px solid #1e293b !important;
+  border-radius: 8px !important;
 }
 .wallet-adapter-dropdown-list-item {
   color: #f1f5f9 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 .wallet-adapter-dropdown-list-item:hover {
   background: #1a1a2e !important;
