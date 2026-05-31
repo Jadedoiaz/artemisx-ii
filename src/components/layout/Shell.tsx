@@ -28,7 +28,7 @@ export const Shell: React.FC = () => {
 
       <AnimatePresence>
         {mobileOpen && (
-          <MobileSidebar onClose={() => setMobileOpen(false)} />
+          <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
         )}
       </AnimatePresence>
 

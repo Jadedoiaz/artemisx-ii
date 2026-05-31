@@ -2,13 +2,13 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 
-const Dashboard = lazy(() => import('./app/Dashboard').then(m => ({ default: m.Dashboard })));
-const BumpCenter = lazy(() => import('./app/BumpCenter').then(m => ({ default: m.BumpCenter })));
-const Portfolio = lazy(() => import('./app/Portfolio').then(m => ({ default: m.Portfolio })));
-const NFTGallery = lazy(() => import('./app/NFTGallery').then(m => ({ default: m.NFTGallery })));
-const Activity = lazy(() => import('./app/Activity').then(m => ({ default: m.Activity })));
-const Analytics = lazy(() => import('./app/Analytics').then(m => ({ default: m.Analytics })));
-const Settings = lazy(() => import('./app/Settings').then(m => ({ default: m.Settings })));
+const Dashboard = lazy(() => import('./app/Dashboard'));
+const BumpCenter = lazy(() => import('./app/BumpCenter'));
+const Portfolio = lazy(() => import('./app/Portfolio'));
+const NFTGallery = lazy(() => import('./app/NFTGallery'));
+const Activity = lazy(() => import('./app/Activity'));
+const Analytics = lazy(() => import('./app/Analytics'));
+const Settings = lazy(() => import('./app/Settings'));
 
 const PageLoader = () => (
   <div className="flex h-full items-center justify-center">

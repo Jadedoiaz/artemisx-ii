@@ -5,7 +5,18 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useBumpStore } from '../stores/bumpStore';
 import { sendNotification } from '../lib/notifications';
 
-export function useBumpEngine() {
+export interface BumpEngine {
+  bump: (amountLamports: number) => Promise<void>;
+  sendBump: (amountLamports: number) => Promise<void>;
+  isBumping: boolean;
+  autoBump: boolean;
+  startAuto: (amountLamports: number, intervalSec: number) => void;
+  startAutoBump: (amountLamports: number, intervalSec: number) => void;
+  stopAuto: () => void;
+  stopAutoBump: () => void;
+}
+
+export function useBumpEngine(): BumpEngine {
   const { publicKey, signTransaction } = useWallet();
   const { solanaRpcUrl, maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore();
   const addTx = useBumpStore((s) => s.addTransaction);
@@ -17,6 +28,7 @@ export function useBumpEngine() {
   const bump = useCallback(async (amountLamports: number) => {
     if (!publicKey || !signTransaction) return;
     const safeAmount = Math.min(amountLamports, maxBumpAmount);
+    setIsBumping(true);
 
     try {
       const connection = new Connection(solanaRpcUrl, 'confirmed');
@@ -68,6 +80,8 @@ export function useBumpEngine() {
         to: publicKey.toBase58(),
       });
       sendNotification('Bump Failed', err.message || 'Transaction failed');
+    } finally {
+      setIsBumping(false);
     }
   }, [publicKey, signTransaction, solanaRpcUrl, maxBumpAmount, addTx, discordWebhookUrl]);
 
@@ -86,5 +100,14 @@ export function useBumpEngine() {
     sendNotification('Auto-Bump Stopped', 'Manual stop triggered');
   }, []);
 
-  return { bump, isBumping, autoBump, startAuto, stopAuto };
+  return {
+    bump,
+    sendBump: bump,
+    isBumping,
+    autoBump,
+    startAuto,
+    startAutoBump: startAuto,
+    stopAuto,
+    stopAutoBump: stopAuto,
+  };
 }

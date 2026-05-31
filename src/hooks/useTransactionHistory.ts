@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 
 export interface ParsedTransaction {
@@ -14,17 +14,27 @@ export interface ParsedTransaction {
   txId?: string;
 }
 
-export function useTransactionHistory(walletAddress?: string) {
+export interface TransactionHistoryResult {
+  transactions: ParsedTransaction[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
+export function useTransactionHistory(walletAddress?: string): TransactionHistoryResult {
   const [txs, setTxs] = useState<ParsedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const heliusApiKey = useSettingsStore((s) => s.heliusApiKey);
 
-  useEffect(() => {
+  const fetchTxs = useCallback(() => {
     if (!walletAddress || !heliusApiKey) {
       setTxs([]);
+      setError(null);
       return;
     }
     setLoading(true);
+    setError(null);
     fetch(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,12 +61,20 @@ export function useTransactionHistory(walletAddress?: string) {
           txId: sig.signature,
         }));
         setTxs(parsed);
+        setError(null);
       })
-      .catch(() => setTxs([]))
+      .catch((e) => {
+        setError(e.message);
+        setTxs([]);
+      })
       .finally(() => setLoading(false));
   }, [walletAddress, heliusApiKey]);
 
-  return { txs, loading };
+  useEffect(() => {
+    fetchTxs();
+  }, [fetchTxs]);
+
+  return { transactions: txs, loading, error, refetch: fetchTxs };
 }
 
 function classifyType(sig: any): ParsedTransaction['type'] {

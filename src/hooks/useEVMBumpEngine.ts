@@ -5,7 +5,18 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useBumpStore } from '../stores/bumpStore';
 import { sendNotification } from '../lib/notifications';
 
-export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
+export interface EVMBumpEngine {
+  bump: (amountEth: number) => Promise<void>;
+  sendBump: (amountEth: number) => Promise<void>;
+  isBumping: boolean;
+  autoBump: boolean;
+  startAuto: (amountEth: number, intervalSec: number) => void;
+  startAutoBump: (amountEth: number, intervalSec: number) => void;
+  stopAuto: () => void;
+  stopAutoBump: () => void;
+}
+
+export function useEVMBumpEngine(chain: 'bsc' | 'ethereum' = 'bsc'): EVMBumpEngine {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore();
@@ -17,7 +28,9 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
 
   const bump = useCallback(async (amountEth: number) => {
     if (!address || !walletClient) return;
-    const wei = parseEther(String(Math.min(amountEth, maxBumpAmount / 1e9)));
+    const safeAmount = Math.min(amountEth, maxBumpAmount / 1e9);
+    const wei = parseEther(String(safeAmount));
+    setIsBumping(true);
 
     try {
       const tx = await walletClient.sendTransaction({
@@ -29,7 +42,7 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
         id: tx,
         chain,
         type: 'bump',
-        amount: amountEth,
+        amount: safeAmount,
         status: 'success',
         txId: tx,
         timestamp: Date.now(),
@@ -37,7 +50,7 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
         to: address,
       });
 
-      sendNotification('Bump Successful', `Sent ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'} on ${chain}`);
+      sendNotification('Bump Successful', `Sent ${safeAmount} ${chain === 'bsc' ? 'BNB' : 'ETH'} on ${chain}`);
 
       if (discordWebhookUrl) {
         const explorer = chain === 'bsc' ? 'https://bscscan.com/tx/' : 'https://etherscan.io/tx/';
@@ -52,13 +65,15 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
         id: crypto.randomUUID(),
         chain,
         type: 'bump',
-        amount: amountEth,
+        amount: safeAmount,
         status: 'failed',
         timestamp: Date.now(),
         from: address,
         to: address,
       });
       sendNotification('Bump Failed', err.message || 'Transaction failed');
+    } finally {
+      setIsBumping(false);
     }
   }, [address, walletClient, chain, maxBumpAmount, addTx, discordWebhookUrl]);
 
@@ -77,5 +92,14 @@ export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
     sendNotification('Auto-Bump Stopped', 'Manual stop triggered');
   }, []);
 
-  return { bump, isBumping, autoBump, startAuto, stopAuto };
+  return {
+    bump,
+    sendBump: bump,
+    isBumping,
+    autoBump,
+    startAuto,
+    startAutoBump: startAuto,
+    stopAuto,
+    stopAutoBump: stopAuto,
+  };
 }
