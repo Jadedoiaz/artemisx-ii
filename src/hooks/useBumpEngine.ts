@@ -8,6 +8,7 @@ import {
 } from '@solana/web3.js';
 import { useBumpStore } from '../stores/bumpStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useNotifications } from './useNotifications';
 import toast from 'react-hot-toast';
 
 export function useBumpEngine() {
@@ -22,6 +23,7 @@ export function useBumpEngine() {
     incrementSuccess,
   } = useBumpStore();
   const { maxBumpAmount, cooldownMs, discordWebhook } = useSettingsStore();
+  const { notify } = useNotifications();
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -72,36 +74,39 @@ export function useBumpEngine() {
         incrementSuccess();
         toast.success(`Bump sent: ${signature.slice(0, 8)}...`);
 
-        // Discord webhook
+        notify({
+          title: 'Bump Successful',
+          body: `Sent ${amountSol} SOL on Solana`,
+          tag: 'bump-success',
+        });
+
         if (discordWebhook) {
           fetch(discordWebhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               username: 'ArtemisX-II Bot',
-              embeds: [
-                {
-                  title: 'Bump Successful',
-                  description: `Sent ${amountSol} SOL self-transfer`,
-                  color: 0x7c3aed,
-                  fields: [
-                    {
-                      name: 'Transaction',
-                      value: `https://solscan.io/tx/${signature}`,
-                    },
-                  ],
-                  timestamp: new Date().toISOString(),
-                },
-              ],
+              embeds: [{
+                title: 'Bump Successful',
+                description: `Sent ${amountSol} SOL self-transfer`,
+                color: 0x7c3aed,
+                fields: [{ name: 'Transaction', value: `https://solscan.io/tx/${signature}` }],
+                timestamp: new Date().toISOString(),
+              }],
             }),
           }).catch(() => {});
         }
       } catch (err: any) {
         updateTxStatus(txId, 'failed');
         toast.error(err.message || 'Bump failed');
+        notify({
+          title: 'Bump Failed',
+          body: err.message || 'Transaction failed on Solana',
+          tag: 'bump-failed',
+        });
       }
     },
-    [publicKey, signTransaction, connection, maxBumpAmount, addTx, updateTxStatus, incrementBump, incrementSuccess, discordWebhook]
+    [publicKey, signTransaction, connection, maxBumpAmount, addTx, updateTxStatus, incrementBump, incrementSuccess, discordWebhook, notify]
   );
 
   const startAutoBump = useCallback(
@@ -113,15 +118,20 @@ export function useBumpEngine() {
       }
 
       setBumping(true);
+      notify({
+        title: 'Auto-Bump Started',
+        body: `Sending ${amountSol} SOL every ${intervalSec}s`,
+        tag: 'auto-bump-start',
+      });
       toast.success(`Auto-bump started: ${amountSol} SOL every ${intervalSec}s`);
 
-      sendBump(amountSol); // First bump immediately
+      sendBump(amountSol);
 
       intervalRef.current = setInterval(() => {
         sendBump(amountSol);
       }, Math.max(intervalSec * 1000, cooldownMs));
     },
-    [isBumping, publicKey, setBumping, sendBump, cooldownMs]
+    [isBumping, publicKey, setBumping, sendBump, cooldownMs, notify]
   );
 
   const stopAutoBump = useCallback(() => {
@@ -130,8 +140,13 @@ export function useBumpEngine() {
       intervalRef.current = null;
     }
     setBumping(false);
+    notify({
+      title: 'Auto-Bump Stopped',
+      body: 'Manual stop triggered',
+      tag: 'auto-bump-stop',
+    });
     toast.success('Auto-bump stopped');
-  }, [setBumping]);
+  }, [setBumping, notify]);
 
   useEffect(() => {
     return () => {

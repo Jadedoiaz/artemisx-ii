@@ -1,5 +1,7 @@
 import { useSettingsStore } from '../stores/settingsStore';
-import { Key, Shield, Palette, Webhook } from 'lucide-react';
+import { useNotifications } from '../hooks/useNotifications';
+import { Key, Shield, Palette, Webhook, Bell, BellOff, BellRing } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 export default function Settings() {
   const {
@@ -17,6 +19,8 @@ export default function Settings() {
     setSolanaRpc,
   } = useSettingsStore();
 
+  const { supported, permission, enabled, enable, disable } = useNotifications();
+
   return (
     <div className="space-y-6">
       <div>
@@ -25,6 +29,7 @@ export default function Settings() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* API Keys */}
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Key size={18} className="text-accent" />
@@ -65,6 +70,7 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Safety Controls */}
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield size={18} className="text-accent" />
@@ -92,6 +98,7 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Theme */}
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Palette size={18} className="text-accent" />
@@ -115,6 +122,79 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Push Notifications */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell size={18} className="text-accent" />
+            <h3 className="font-semibold">Push Notifications</h3>
+          </div>
+
+          {!supported && (
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-warning">
+                <BellOff size={16} />
+                <span className="text-sm font-medium">Not Supported</span>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                Your browser does not support push notifications.
+              </p>
+            </div>
+          )}
+
+          {supported && permission === 'denied' && (
+            <div className="bg-danger/10 border border-danger/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-danger">
+                <BellOff size={16} />
+                <span className="text-sm font-medium">Permission Denied</span>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                Notifications were blocked. Enable them in your browser settings to use this feature.
+              </p>
+            </div>
+          )}
+
+          {supported && permission !== 'denied' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Enable Notifications</p>
+                  <p className="text-xs text-muted">
+                    Get alerts when bumps complete, fail, or auto-bump stops
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (enabled) {
+                      disable();
+                    } else {
+                      enable();
+                    }
+                  }}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
+                    enabled
+                      ? 'bg-success/10 text-success border border-success/30 hover:bg-success/20'
+                      : 'bg-surface-highlight border border-border text-muted hover:text-white hover:border-accent'
+                  )}
+                >
+                  {enabled ? <BellRing size={16} /> : <Bell size={16} />}
+                  {enabled ? 'Enabled' : 'Enable'}
+                </button>
+              </div>
+
+              {enabled && (
+                <div className="bg-success/10 border border-success/20 rounded-lg p-3">
+                  <p className="text-xs text-success flex items-center gap-2">
+                    <BellRing size={14} />
+                    Notifications active. You will receive alerts for all bump events.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Webhook Test */}
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Webhook size={18} className="text-accent" />
