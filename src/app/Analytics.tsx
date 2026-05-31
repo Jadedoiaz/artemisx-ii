@@ -1,11 +1,6 @@
 import { useBumpStore } from '../stores/bumpStore';
 import { useEffect, useState } from 'react';
-
-const chainData = [
-  { name: 'Solana', value: 45, color: '#7c3aed' },
-  { name: 'BSC', value: 30, color: '#eab308' },
-  { name: 'Ethereum', value: 25, color: '#3b82f6' },
-];
+import ActivityHeatmap from '../../components/analytics/ActivityHeatmap';
 
 const weeklyData = [
   { day: 'Mon', bumps: 12 },
@@ -23,6 +18,9 @@ let RechartsModule: any = null;
 export default function Analytics() {
   const { bumpCount, successCount, transactions } = useBumpStore();
   const [chartsLoaded, setChartsLoaded] = useState(false);
+
+  // Extract timestamps for heatmap
+  const timestamps = transactions.map(t => t.timestamp);
 
   // Lazy load recharts on mount
   useEffect(() => {
@@ -71,6 +69,9 @@ export default function Analytics() {
           </p>
         </div>
       </div>
+
+      {/* Activity Heatmap */}
+      <ActivityHeatmap timestamps={timestamps} weeksBack={26} />
 
       {!chartsLoaded && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
