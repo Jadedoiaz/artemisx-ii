@@ -17,14 +17,13 @@ export function exportToCSV(transactions: ParsedTransaction[]): void {
     tx.source,
   ]);
 
-  const csv = [headers.join(','), ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('
-');
+  const csv = [headers.join(','), ...rows.map((r) => r.map((cell) => '"' + String(cell).replace(/"/g, '""') + '"').join(','))].join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `artemisx-transactions-${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute('download', 'artemisx-transactions-' + new Date().toISOString().split('T')[0] + '.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
