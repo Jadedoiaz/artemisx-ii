@@ -1,113 +1,158 @@
-import { useState, useCallback, useRef } from 'react'
-import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useSettingsStore } from '../stores/settingsStore'
-import { useBumpStore } from '../stores/bumpStore'
-import { sendNotification } from '../lib/notifications'
+import { useCallback, useRef, useEffect } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import {
+  Transaction,
+  SystemProgram,
+  PublicKey,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js';
+import { useBumpStore } from '../stores/bumpStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useNotifications } from './useNotifications';
+import toast from 'react-hot-toast';
 
-export interface BumpEngine {
-  bump: (amountLamports: number) => Promise<void>
-  sendBump: (amountLamports: number) => Promise<void>
-  isBumping: boolean
-  autoBump: boolean
-  startAuto: (amountLamports: number, intervalSec: number) => void
-  startAutoBump: (amountLamports: number, intervalSec: number) => void
-  stopAuto: () => void
-  stopAutoBump: () => void
-}
+export function useBumpEngine() {
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
+  const {
+    isBumping,
+    setBumping,
+    addTx,
+    updateTxStatus,
+    incrementBump,
+    incrementSuccess,
+  } = useBumpStore();
+  const { maxBumpAmount, cooldownMs, discordWebhook } = useSettingsStore();
+  const { notify } = useNotifications();
 
-export function useBumpEngine(): BumpEngine {
-  const { publicKey, signTransaction } = useWallet()
-  const { solanaRpcUrl, maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore()
-  const addTx = useBumpStore((s) => s.addTransaction)
-  const setBumping = useBumpStore((s) => s.setBumping)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [autoBump, setAutoBump] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const bump = useCallback(async (amountLamports: number) => {
-    if (!publicKey || !signTransaction) return
-    const safeAmount = Math.min(amountLamports, maxBumpAmount)
-    setBumping(true)
-
-    try {
-      const connection = new Connection(solanaRpcUrl, 'confirmed')
-      const tx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: publicKey,
-          lamports: safeAmount,
-        })
-      )
-      tx.feePayer = publicKey
-      const { blockhash } = await connection.getLatestBlockhash()
-      tx.recentBlockhash = blockhash
-
-      const signed = await signTransaction(tx)
-      const sig = await connection.sendRawTransaction(signed.serialize())
-      await connection.confirmTransaction(sig, 'confirmed')
-
-      addTx({
-        id: sig,
-        chain: 'solana',
-        type: 'bump',
-        amount: safeAmount / 1e9,
-        status: 'success',
-        txId: sig,
-        timestamp: Date.now(),
-        from: publicKey.toBase58(),
-        to: publicKey.toBase58(),
-      })
-
-      sendNotification({ title: 'Bump Successful', body: `Sent ${(safeAmount / 1e9).toFixed(4)} SOL on Solana` })
-
-      if (discordWebhookUrl) {
-        fetch(discordWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: `Bump successful: https://solscan.io/tx/${sig}` }),
-        }).catch(() => {})
+  const sendBump = useCallback(
+    async (amountSol: number) => {
+      if (!publicKey || !signTransaction || !connection) {
+        toast.error('Wallet not connected');
+        return;
       }
-    } catch (err: any) {
+
+      const amountLamports = Math.floor(amountSol * LAMPORTS_PER_SOL);
+      if (amountLamports > maxBumpAmount) {
+        toast.error(`Amount exceeds max limit (${maxBumpAmount} lamports)`);
+        return;
+      }
+
+      const txId = crypto.randomUUID();
       addTx({
-        id: crypto.randomUUID(),
+        id: txId,
         chain: 'solana',
         type: 'bump',
-        amount: safeAmount / 1e9,
-        status: 'failed',
+        amount: amountSol,
+        status: 'pending',
         timestamp: Date.now(),
         from: publicKey.toBase58(),
         to: publicKey.toBase58(),
-      })
-      sendNotification({ title: 'Bump Failed', body: err.message || 'Transaction failed' })
-    } finally {
-      setBumping(false)
+      });
+      incrementBump();
+
+      try {
+        const { blockhash } = await connection.getLatestBlockhash();
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: publicKey,
+            lamports: amountLamports,
+          })
+        );
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey;
+
+        const signed = await signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signed.serialize());
+
+        await connection.confirmTransaction(signature, 'confirmed');
+
+        updateTxStatus(txId, 'success', signature);
+        incrementSuccess();
+        toast.success(`Bump sent: ${signature.slice(0, 8)}...`);
+
+        notify({
+          title: 'Bump Successful',
+          body: `Sent ${amountSol} SOL on Solana`,
+          tag: 'bump-success',
+        });
+
+        if (discordWebhook) {
+          fetch(discordWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: 'ArtemisX-II Bot',
+              embeds: [{
+                title: 'Bump Successful',
+                description: `Sent ${amountSol} SOL self-transfer`,
+                color: 0x7c3aed,
+                fields: [{ name: 'Transaction', value: `https://solscan.io/tx/${signature}` }],
+                timestamp: new Date().toISOString(),
+              }],
+            }),
+          }).catch(() => {});
+        }
+      } catch (err: any) {
+        updateTxStatus(txId, 'failed');
+        toast.error(err.message || 'Bump failed');
+        notify({
+          title: 'Bump Failed',
+          body: err.message || 'Transaction failed on Solana',
+          tag: 'bump-failed',
+        });
+      }
+    },
+    [publicKey, signTransaction, connection, maxBumpAmount, addTx, updateTxStatus, incrementBump, incrementSuccess, discordWebhook, notify]
+  );
+
+  const startAutoBump = useCallback(
+    (amountSol: number, intervalSec: number) => {
+      if (isBumping) return;
+      if (!publicKey) {
+        toast.error('Connect wallet first');
+        return;
+      }
+
+      setBumping(true);
+      notify({
+        title: 'Auto-Bump Started',
+        body: `Sending ${amountSol} SOL every ${intervalSec}s`,
+        tag: 'auto-bump-start',
+      });
+      toast.success(`Auto-bump started: ${amountSol} SOL every ${intervalSec}s`);
+
+      sendBump(amountSol);
+
+      intervalRef.current = setInterval(() => {
+        sendBump(amountSol);
+      }, Math.max(intervalSec * 1000, cooldownMs));
+    },
+    [isBumping, publicKey, setBumping, sendBump, cooldownMs, notify]
+  );
+
+  const stopAutoBump = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-  }, [publicKey, signTransaction, solanaRpcUrl, maxBumpAmount, addTx, discordWebhookUrl, setBumping])
+    setBumping(false);
+    notify({
+      title: 'Auto-Bump Stopped',
+      body: 'Manual stop triggered',
+      tag: 'auto-bump-stop',
+    });
+    toast.success('Auto-bump stopped');
+  }, [setBumping, notify]);
 
-  const startAuto = useCallback((amountLamports: number, intervalSec: number) => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    setAutoBump(true)
-    sendNotification({ title: 'Auto-Bump Started', body: `Sending every ${intervalSec}s` })
-    intervalRef.current = setInterval(() => {
-      bump(amountLamports)
-    }, Math.max(intervalSec * 1000, cooldownMs))
-  }, [bump, cooldownMs])
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
-  const stopAuto = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    setAutoBump(false)
-    sendNotification({ title: 'Auto-Bump Stopped', body: 'Manual stop triggered' })
-  }, [])
-
-  return {
-    bump,
-    sendBump: bump,
-    isBumping: false,
-    autoBump,
-    startAuto,
-    startAutoBump: startAuto,
-    stopAuto,
-    stopAutoBump: stopAuto,
-  }
+  return { sendBump, startAutoBump, stopAutoBump, isBumping };
 }

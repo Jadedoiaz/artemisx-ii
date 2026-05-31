@@ -1,9 +1,20 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Zap, Wallet, Image, Activity, BarChart3, Settings } from 'lucide-react'
-import { useBumpStore } from '../../stores/bumpStore'
+import { NavLink } from 'react-router-dom';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useAccount } from 'wagmi';
+import { useBumpStore } from '../../stores/bumpStore';
+import {
+  LayoutDashboard,
+  Zap,
+  Wallet,
+  Activity,
+  BarChart3,
+  Settings,
+  Image,
+} from 'lucide-react';
+import { formatAddress } from '../../lib/utils';
+import { cn } from '../../lib/utils';
 
-const links = [
+const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/bump', icon: Zap, label: 'Bump Center' },
   { to: '/portfolio', icon: Wallet, label: 'Portfolio' },
@@ -11,40 +22,82 @@ const links = [
   { to: '/activity', icon: Activity, label: 'Activity' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/settings', icon: Settings, label: 'Settings' },
-]
+];
+
+// Route component map for preloading
+const routePreloads: Record<string, () => Promise<any>> = {
+  '/': () => import('../../app/Dashboard'),
+  '/bump': () => import('../../app/BumpCenter'),
+  '/portfolio': () => import('../../app/Portfolio'),
+  '/nfts': () => import('../../app/NFTGallery'),
+  '/activity': () => import('../../app/Activity'),
+  '/analytics': () => import('../../app/Analytics'),
+  '/settings': () => import('../../app/Settings'),
+};
 
 export default function Sidebar() {
-  const activeChain = useBumpStore((s) => s.activeChain)
+  const { publicKey, connected: solanaConnected } = useWallet();
+  const { address: evmAddress, isConnected: evmConnected } = useAccount();
+  const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
+
+  const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
+  const showWallet = isEVM ? evmConnected : solanaConnected;
+  const walletAddress = isEVM ? evmAddress : (publicKey?.toBase58() || null);
+
+  const handleMouseEnter = (to: string) => {
+    const preload = routePreloads[to];
+    if (preload) {
+      preload();
+    }
+  };
 
   return (
-    <nav className="flex h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-6 flex items-center gap-2 px-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500 text-white">
-          <Zap size={16} />
-        </div>
-        <span className="text-lg font-bold text-slate-900 dark:text-white">Artemis X-II</span>
+    <aside className="w-64 h-screen bg-surface border-r border-border flex flex-col fixed left-0 top-0 z-50">
+      <div className="p-6 border-b border-border">
+        <h1 className="text-xl font-bold tracking-tight">
+          <span className="text-accent">Artemis</span> X-II
+        </h1>
+        <p className="text-xs text-muted mt-1">Multi-Chain Bump Suite</p>
       </div>
-      <div className="space-y-1">
-        {links.map((link) => (
+
+      {showWallet && walletAddress && (
+        <div className="px-4 py-3 border-b border-border bg-surface-highlight/50">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-xs text-muted">{isEVM ? 'MetaMask' : 'Solana'} Connected</span>
+          </div>
+          <p className="text-xs font-mono text-accent mt-1 truncate">
+            {formatAddress(walletAddress)}
+          </p>
+        </div>
+      )}
+
+      <nav className="flex-1 p-4 space-y-1">
+        {navItems.map((item) => (
           <NavLink
-            key={link.to}
-            to={link.to}
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            onMouseEnter={() => handleMouseEnter(item.to)}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              cn(
+                'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
-              }`
+                  ? 'bg-accent/10 text-accent'
+                  : 'text-muted hover:text-white hover:bg-surface-highlight'
+              )
             }
           >
-            <link.icon size={18} />
-            {link.label}
+            <item.icon size={18} />
+            {item.label}
           </NavLink>
         ))}
+      </nav>
+      <div className="p-4 border-t border-border">
+        <div className="text-xs text-muted text-center">
+          v2.3.1 Optimized
+        </div>
       </div>
-      <div className="mt-auto px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-        Chain: <span className="font-medium text-slate-900 uppercase dark:text-white">{activeChain}</span>
-      </div>
-    </nav>
-  )
+    </aside>
+  );
 }

@@ -1,15 +1,10 @@
-import React from 'react'
 import { WagmiProvider } from 'wagmi'
 import { evmConfig } from '../../lib/evm'
-import { SolanaWalletProvider } from './SolanaWalletProvider'
+import SolanaWalletProvider from './SolanaWalletProvider'
 
-interface Props {
-  children: React.ReactNode
-}
-
-export const UnifiedWalletProvider: React.FC<Props> = ({ children }) => {
+export default function UnifiedWalletProvider({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={evmConfig}>
+    <WagmiProvider config={evmConfig} reconnectOnMount={true}>
       <SolanaWalletProvider>
         {children}
       </SolanaWalletProvider>

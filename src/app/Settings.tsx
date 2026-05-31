@@ -1,242 +1,229 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Key, Webhook, Link2, Palette, Zap, Bell, Sun, Moon, Check } from 'lucide-react'
-import { useSettingsStore } from '../stores/settingsStore'
-import { useTheme } from '../hooks/useTheme'
+import { useSettingsStore } from '../stores/settingsStore';
+import { useNotifications } from '../hooks/useNotifications';
+import { Key, Shield, Palette, Webhook, Bell, BellOff, BellRing } from 'lucide-react';
+import { cn } from '../lib/utils';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-}
-
-const item = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-}
-
-export const Settings: React.FC = () => {
+export default function Settings() {
   const {
-    heliusApiKey,
-    discordWebhookUrl,
-    solanaRpcUrl,
     accentColor,
     maxBumpAmount,
     cooldownMs,
-    notificationsEnabled,
-    setHeliusApiKey,
-    setDiscordWebhookUrl,
-    setSolanaRpcUrl,
+    discordWebhook,
+    heliusKey,
+    solanaRpc,
     setAccentColor,
-    setMaxBumpAmount,
-    setCooldownMs,
-    setNotificationsEnabled,
-    setTheme,
-  } = useSettingsStore()
+    setMaxBump,
+    setCooldown,
+    setWebhook,
+    setHeliusKey,
+    setSolanaRpc,
+  } = useSettingsStore();
 
-  const { theme, toggle } = useTheme()
-  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle')
-
-  const colors = [
-    { id: 'purple', class: 'bg-purple-500' },
-    { id: 'blue', class: 'bg-blue-500' },
-    { id: 'emerald', class: 'bg-emerald-500' },
-    { id: 'rose', class: 'bg-rose-500' },
-    { id: 'amber', class: 'bg-amber-500' },
-  ]
-
-  const handleTestWebhook = async () => {
-    if (!discordWebhookUrl) return
-    try {
-      const res = await fetch(discordWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: 'Artemis X-II webhook test successful.' }),
-      })
-      setTestStatus(res.ok ? 'success' : 'error')
-    } catch {
-      setTestStatus('error')
-    }
-    setTimeout(() => setTestStatus('idle'), 3000)
-  }
+  const { supported, permission, enabled, enable, disable } = useNotifications();
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-3xl space-y-6">
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Configure your API keys, preferences, and appearance.</p>
-      </motion.div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted mt-1">Configure your Artemis X-II instance</p>
+      </div>
 
-      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex items-center gap-2">
-          <Palette size={18} className="text-slate-500 dark:text-slate-400" />
-          <h2 className="font-semibold text-slate-900 dark:text-white">Appearance</h2>
-        </div>
-        <div className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400">Theme</label>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => { setTheme('dark'); applyTheme('dark') }}
-                className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
-                  theme === 'dark'
-                    ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                    : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
-                }`}
-              >
-                <Moon size={16} /> Dark
-              </button>
-              <button
-                onClick={() => { setTheme('light'); applyTheme('light') }}
-                className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
-                  theme === 'light'
-                    ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                    : 'border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
-                }`}
-              >
-                <Sun size={16} /> Light
-              </button>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* API Keys */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Key size={18} className="text-accent" />
+            <h3 className="font-semibold">API Keys</h3>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400">Accent Color</label>
-            <div className="flex flex-wrap gap-3">
-              {colors.map((c) => (
+            <label className="text-sm text-muted mb-1 block">Helius API Key</label>
+            <input
+              type="password"
+              value={heliusKey}
+              onChange={(e) => setHeliusKey(e.target.value)}
+              placeholder="Enter your Helius API key"
+              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted mb-1 block">Discord Webhook URL</label>
+            <input
+              type="url"
+              value={discordWebhook}
+              onChange={(e) => setWebhook(e.target.value)}
+              placeholder="https://discord.com/api/webhooks/..."
+              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted mb-1 block">Solana RPC URL</label>
+            <input
+              type="url"
+              value={solanaRpc}
+              onChange={(e) => setSolanaRpc(e.target.value)}
+              placeholder="https://api.devnet.solana.com"
+              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
+            />
+          </div>
+        </div>
+
+        {/* Safety Controls */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield size={18} className="text-accent" />
+            <h3 className="font-semibold">Safety Controls</h3>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted mb-1 block">Max Bump Amount (lamports)</label>
+            <input
+              type="number"
+              value={maxBumpAmount}
+              onChange={(e) => setMaxBump(Number(e.target.value))}
+              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted mb-1 block">Cooldown (milliseconds)</label>
+            <input
+              type="number"
+              value={cooldownMs}
+              onChange={(e) => setCooldown(Number(e.target.value))}
+              className="w-full bg-surface-highlight border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-accent text-white"
+            />
+          </div>
+        </div>
+
+        {/* Theme */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Palette size={18} className="text-accent" />
+            <h3 className="font-semibold">Theme</h3>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted mb-1 block">Accent Color</label>
+            <div className="flex gap-2 flex-wrap">
+              {['#7c3aed', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444'].map((c) => (
                 <button
-                  key={c.id}
-                  onClick={() => setAccentColor(c.id)}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full ${c.class} transition-transform hover:scale-110 ${
-                    accentColor === c.id ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''
+                  key={c}
+                  onClick={() => setAccentColor(c)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    accentColor === c ? 'border-white scale-110' : 'border-transparent'
                   }`}
-                  aria-label={`Select ${c.id} accent`}
-                >
-                  {accentColor === c.id && <Check size={14} className="text-white" />}
-                </button>
+                  style={{ background: c }}
+                />
               ))}
             </div>
           </div>
         </div>
-      </motion.div>
 
-      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex items-center gap-2">
-          <Key size={18} className="text-slate-500 dark:text-slate-400" />
-          <h2 className="font-semibold text-slate-900 dark:text-white">API Keys</h2>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Helius API Key</label>
-            <input
-              type="password"
-              value={heliusApiKey}
-              onChange={(e) => setHeliusApiKey(e.target.value)}
-              placeholder="Enter your Helius API key"
-              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Required for live portfolio data, NFT gallery, and transaction history.</p>
+        {/* Push Notifications */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell size={18} className="text-accent" />
+            <h3 className="font-semibold">Push Notifications</h3>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Discord Webhook URL</label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={discordWebhookUrl}
-                onChange={(e) => setDiscordWebhookUrl(e.target.value)}
-                placeholder="https://discord.com/api/webhooks/..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
-              />
-              <button
-                onClick={handleTestWebhook}
-                disabled={!discordWebhookUrl}
-                className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
-              >
-                {testStatus === 'success' ? 'Sent!' : testStatus === 'error' ? 'Failed' : 'Test'}
-              </button>
+          {!supported && (
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-warning">
+                <BellOff size={16} />
+                <span className="text-sm font-medium">Not Supported</span>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                Your browser does not support push notifications.
+              </p>
             </div>
-          </div>
+          )}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Solana RPC URL</label>
-            <div className="flex items-center gap-2">
-              <Link2 size={14} className="text-slate-400 dark:text-slate-500" />
-              <input
-                type="url"
-                value={solanaRpcUrl}
-                onChange={(e) => setSolanaRpcUrl(e.target.value)}
-                placeholder="https://api.mainnet-beta.solana.com"
-                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
-              />
+          {supported && permission === 'denied' && (
+            <div className="bg-danger/10 border border-danger/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-danger">
+                <BellOff size={16} />
+                <span className="text-sm font-medium">Permission Denied</span>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                Notifications were blocked. Enable them in your browser settings to use this feature.
+              </p>
             </div>
-          </div>
-        </div>
-      </motion.div>
+          )}
 
-      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex items-center gap-2">
-          <Zap size={18} className="text-slate-500 dark:text-slate-400" />
-          <h2 className="font-semibold text-slate-900 dark:text-white">Bump Engine</h2>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Max Bump Amount (lamports)</label>
-            <input
-              type="number"
-              value={maxBumpAmount}
-              onChange={(e) => setMaxBumpAmount(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Safety cap per transaction. 1000 lamports = ~0.001 SOL.</p>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400">Cooldown (ms)</label>
-            <input
-              type="number"
-              value={cooldownMs}
-              onChange={(e) => setCooldownMs(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Minimum delay between bumps in milliseconds.</p>
-          </div>
-        </div>
-      </motion.div>
+          {supported && permission !== 'denied' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Enable Notifications</p>
+                  <p className="text-xs text-muted">
+                    Get alerts when bumps complete, fail, or auto-bump stops
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (enabled) {
+                      disable();
+                    } else {
+                      enable();
+                    }
+                  }}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
+                    enabled
+                      ? 'bg-success/10 text-success border border-success/30 hover:bg-success/20'
+                      : 'bg-surface-highlight border border-border text-muted hover:text-white hover:border-accent'
+                  )}
+                >
+                  {enabled ? <BellRing size={16} /> : <Bell size={16} />}
+                  {enabled ? 'Enabled' : 'Enable'}
+                </button>
+              </div>
 
-      <motion.div variants={item} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mb-4 flex items-center gap-2">
-          <Bell size={18} className="text-slate-500 dark:text-slate-400" />
-          <h2 className="font-semibold text-slate-900 dark:text-white">Notifications</h2>
+              {enabled && (
+                <div className="bg-success/10 border border-success/20 rounded-lg p-3">
+                  <p className="text-xs text-success flex items-center gap-2">
+                    <BellRing size={14} />
+                    Notifications active. You will receive alerts for all bump events.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">Push Notifications</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Browser alerts when bumps complete or fail.</p>
+
+        {/* Webhook Test */}
+        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Webhook size={18} className="text-accent" />
+            <h3 className="font-semibold">Discord Integration</h3>
           </div>
+
+          <p className="text-sm text-muted">
+            Configure your Discord webhook above to receive bump notifications in real-time.
+          </p>
+
           <button
-            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              notificationsEnabled ? 'bg-purple-500' : 'bg-slate-400 dark:bg-slate-600'
-            }`}
+            onClick={() => {
+              if (discordWebhook) {
+                fetch(discordWebhook, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    content: 'Artemis X-II webhook test successful!',
+                  }),
+                }).catch((err) => console.error('Webhook test failed:', err));
+              }
+            }}
+            disabled={!discordWebhook}
+            className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
+            Test Webhook
           </button>
         </div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-function applyTheme(t: 'dark' | 'light') {
-  if (typeof document === 'undefined') return
-  const root = document.documentElement
-  if (t === 'dark') {
-    root.classList.add('dark')
-    root.classList.remove('light')
-  } else {
-    root.classList.add('light')
-    root.classList.remove('dark')
-  }
+      </div>
+    </div>
+  );
 }

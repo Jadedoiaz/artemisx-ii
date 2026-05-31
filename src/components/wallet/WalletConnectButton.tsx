@@ -1,63 +1,102 @@
-import React from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useAccount, useDisconnect as useDisconnectEVM } from 'wagmi'
-import { Wallet, LogOut } from 'lucide-react'
-import { useBumpStore } from '../../stores/bumpStore'
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
+import { injected } from 'wagmi/connectors';
+import { Wallet, LogOut, ChevronDown } from 'lucide-react';
+import { formatAddress } from '../../lib/utils';
+import { useBumpStore } from '../../stores/bumpStore';
+import { mainnet, bsc } from 'viem/chains';
 
 export default function WalletConnectButton() {
-  const { publicKey, disconnect: disconnectSolana, select, connect, wallets, connected: solanaConnected } = useWallet()
-  const { address: evmAddress, isConnected: evmConnected } = useAccount()
-  const { disconnect: disconnectEVM } = useDisconnectEVM()
-  const activeChain = useBumpStore((s) => s.activeChain)
-  const setActiveChain = useBumpStore((s) => s.setActiveChain)
+  const { publicKey, connected: solanaConnected, disconnect: disconnectSolana } = useWallet();
+  const { setVisible: openSolanaModal } = useWalletModal();
 
-  const isSolana = activeChain === 'solana'
-  const connected = isSolana ? solanaConnected : evmConnected
-  const address = isSolana ? publicKey?.toBase58() : evmAddress
+  const { address: evmAddress, isConnected: evmConnected } = useAccount();
+  const { connect: connectEVM, connectors } = useConnect();
+  const { disconnect: disconnectEVM } = useDisconnect();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
 
-  const handleConnect = async () => {
-    if (isSolana) {
-      const phantom = wallets.find((w) => w.adapter.name === 'Phantom')
-      if (phantom) {
-        select(phantom.adapter.name)
-        await connect()
-      }
-    }
-  }
+  const activeChain = useBumpStore((s: { activeChain: string }) => s.activeChain);
 
-  const handleDisconnect = () => {
-    if (isSolana) disconnectSolana()
-    else disconnectEVM()
-  }
+  // Determine which wallet system to show based on active chain
+  const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
+  const targetChainId = activeChain === 'bsc' ? bsc.id : mainnet.id;
 
-  return (
-    <div className="flex items-center gap-2">
-      <select
-        value={activeChain}
-        onChange={(e) => setActiveChain(e.target.value)}
-        className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+  // EVM connected but wrong chain
+  const wrongChain = evmConnected && chainId !== targetChainId && isEVM;
+
+  // Solana connected state
+  if (!isEVM && solanaConnected && publicKey) {
+    return (
+      <button
+        onClick={() => disconnectSolana()}
+        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border hover:border-danger rounded-lg text-sm font-medium transition-all text-white hover:text-danger"
+        title="Disconnect wallet"
       >
-        <option value="solana">Solana</option>
-        <option value="bsc">BSC</option>
-        <option value="ethereum">Ethereum</option>
-      </select>
-      {connected && address ? (
+        <LogOut size={16} />
+        <span className="hidden sm:inline font-mono">{formatAddress(publicKey.toBase58())}</span>
+      </button>
+    );
+  }
+
+  // EVM connected state
+  if (isEVM && evmConnected && evmAddress) {
+    return (
+      <div className="flex items-center gap-2">
+        {wrongChain && switchChain && (
+          <button
+            onClick={() => switchChain({ chainId: targetChainId })}
+            className="px-3 py-2 bg-warning/10 border border-warning/30 text-warning rounded-lg text-xs font-medium hover:bg-warning/20 transition-colors"
+          >
+            Switch to {activeChain === 'bsc' ? 'BSC' : 'ETH'}
+          </button>
+        )}
         <button
-          onClick={handleDisconnect}
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-900 transition-colors hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-400"
+          onClick={() => disconnectEVM()}
+          className="flex items-center gap-2 px-4 py-2 bg-surface-highlight border border-border hover:border-danger rounded-lg text-sm font-medium transition-all text-white hover:text-danger"
         >
-          <span className="max-w-[100px] truncate">{address.slice(0, 6)}...{address.slice(-4)}</span>
-          <LogOut size={14} />
+          <LogOut size={16} />
+          <span className="hidden sm:inline font-mono">{formatAddress(evmAddress)}</span>
         </button>
-      ) : (
-        <button
-          onClick={handleConnect}
-          className="flex items-center gap-2 rounded-lg bg-purple-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-600"
-        >
-          <Wallet size={16} />
-          Connect Wallet
-        </button>
-      )}
+      </div>
+    );
+  }
+
+  // Solana disconnected state
+  if (!isEVM) {
+    return (
+      <button
+        onClick={() => openSolanaModal(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-accent text-white hover:bg-accent-hover rounded-lg text-sm font-medium transition-all shadow-lg shadow-accent/20"
+      >
+        <Wallet size={16} />
+        <span>Connect Wallet</span>
+      </button>
+    );
+  }
+
+  // EVM disconnected state
+  return (
+    <div className="relative group">
+      <button
+        className="flex items-center gap-2 px-4 py-2 bg-accent text-white hover:bg-accent-hover rounded-lg text-sm font-medium transition-all shadow-lg shadow-accent/20"
+      >
+        <Wallet size={16} />
+        <span>Connect Wallet</span>
+        <ChevronDown size={14} />
+      </button>
+      <div className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+        {connectors.map((connector) => (
+          <button
+            key={connector.uid}
+            onClick={() => connectEVM({ connector, chainId: targetChainId })}
+            className="w-full text-left px-4 py-3 text-sm text-white hover:bg-surface-highlight first:rounded-t-lg last:rounded-b-lg transition-colors"
+          >
+            {connector.name}
+          </button>
+        ))}
+      </div>
     </div>
-  )
+  );
 }

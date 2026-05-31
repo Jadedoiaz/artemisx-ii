@@ -1,35 +1,52 @@
 export interface NotificationOptions {
-  title: string
-  body?: string
-  icon?: string
-}
-
-export function isNotificationSupported(): boolean {
-  return typeof window !== 'undefined' && 'Notification' in window
+  title: string;
+  body: string;
+  icon?: string;
+  tag?: string;
+  requireInteraction?: boolean;
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (!isNotificationSupported()) return false
-  if (Notification.permission === 'granted') return true
-  if (Notification.permission === 'denied') return false
-  const permission = await Notification.requestPermission()
-  return permission === 'granted'
-}
-
-export function getNotificationPermission(): NotificationPermission {
-  if (!isNotificationSupported()) return 'default'
-  return Notification.permission
-}
-
-export function sendNotification(options: NotificationOptions | string): void {
-  if (!isNotificationSupported()) return
-  if (Notification.permission !== 'granted') return
-  if (typeof options === 'string') {
-    new Notification(options)
-  } else {
-    new Notification(options.title, {
-      body: options.body || '',
-      icon: options.icon || '/favicon.ico',
-    })
+  if (!('Notification' in window)) {
+    console.warn('This browser does not support desktop notifications');
+    return false;
   }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission === 'denied') {
+    return false;
+  }
+
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+}
+
+export function sendNotification(options: NotificationOptions): void {
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  try {
+    new Notification(options.title, {
+      body: options.body,
+      icon: options.icon || '/favicon.ico',
+      tag: options.tag || 'artemisx',
+      requireInteraction: options.requireInteraction || false,
+      silent: false,
+    });
+  } catch (err) {
+    console.error('Failed to send notification:', err);
+  }
+}
+
+export function isNotificationSupported(): boolean {
+  return 'Notification' in window;
+}
+
+export function getNotificationPermission(): NotificationPermission | null {
+  if (!('Notification' in window)) return null;
+  return Notification.permission;
 }
