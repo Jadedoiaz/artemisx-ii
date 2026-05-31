@@ -1,52 +1,55 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { fetchNFTsByOwner, fetchNFTCollections, NFTAsset, NFTCollection } from '../lib/api';
+import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
-import toast from 'react-hot-toast';
 
-export function useNFTs() {
-  const { publicKey, connected } = useWallet();
-  const { heliusKey } = useSettingsStore();
-  const [nfts, setNfts] = useState<NFTAsset[]>([]);
-  const [collections, setCollections] = useState<NFTCollection[]>([]);
+export interface NFTItem {
+  id: string;
+  name: string;
+  image: string;
+  collection?: string;
+  attributes?: Record<string, string>;
+  listed?: boolean;
+}
+
+export function useNFTs(walletAddress?: string) {
+  const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState<string>('all');
-
-  const fetchNFTs = useCallback(async () => {
-    if (!publicKey || !connected || !heliusKey) return;
-
-    setLoading(true);
-    try {
-      const assets = await fetchNFTsByOwner(publicKey.toBase58(), heliusKey);
-      setNfts(assets);
-
-      const cols = await fetchNFTCollections(publicKey.toBase58(), heliusKey);
-      setCollections(cols);
-    } catch (err: any) {
-      console.error('NFT fetch failed:', err);
-      toast.error('Failed to load NFTs. Check your Helius API key.');
-    } finally {
-      setLoading(false);
-    }
-  }, [publicKey, connected, heliusKey]);
+  const [error, setError] = useState<string | null>(null);
+  const heliusApiKey = useSettingsStore((s) => s.heliusApiKey);
 
   useEffect(() => {
-    if (connected && publicKey && heliusKey) {
-      fetchNFTs();
+    if (!walletAddress || !heliusApiKey) {
+      setNfts([]);
+      return;
     }
-  }, [connected, publicKey, heliusKey, fetchNFTs]);
+    setLoading(true);
+    fetch(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getAssetsByOwner',
+        params: { ownerAddress: walletAddress, page: 1, limit: 1000 },
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const items: NFTItem[] = (data.result?.items || []).map((item: any) => ({
+          id: item.id,
+          name: item.content?.metadata?.name || 'Unnamed',
+          image: item.content?.links?.image || '',
+          collection: item.grouping?.[0]?.collection_metadata?.name || undefined,
+          attributes: item.content?.metadata?.attributes || undefined,
+          listed: item.ownership?.frozen || false,
+        }));
+        setNfts(items);
+        setError(null);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [walletAddress, heliusApiKey]);
 
-  const filteredNFTs = selectedCollection === 'all'
-    ? nfts
-    : nfts.filter(nft => nft.collection === selectedCollection);
+  const collections = Array.from(new Set(nfts.map((n) => n.collection).filter(Boolean)));
 
-  return {
-    nfts,
-    collections,
-    filteredNFTs,
-    loading,
-    selectedCollection,
-    setSelectedCollection,
-    refetch: fetchNFTs,
-  };
+  return { nfts, collections, loading, error };
 }

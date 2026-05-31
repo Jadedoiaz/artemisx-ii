@@ -23,7 +23,6 @@ export const Settings: React.FC = () => {
     maxBumpAmount,
     cooldownMs,
     notificationsEnabled,
-    theme: storedTheme,
     setHeliusApiKey,
     setDiscordWebhookUrl,
     setSolanaRpcUrl,

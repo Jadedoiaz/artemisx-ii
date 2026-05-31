@@ -1,157 +1,81 @@
-import { useCallback, useRef, useEffect } from 'react';
-import { useAccount, useWalletClient, useChainId } from 'wagmi';
-import { parseEther, createWalletClient, custom } from 'viem';
-import { mainnet, bsc } from 'viem/chains';
-import { useBumpStore } from '../stores/bumpStore';
+import { useState, useCallback, useRef } from 'react';
+import { useAccount, useWalletClient } from 'wagmi';
+import { parseEther } from 'viem';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useNotifications } from './useNotifications';
-import toast from 'react-hot-toast';
+import { useBumpStore } from '../stores/bumpStore';
+import { sendNotification } from '../lib/notifications';
 
-export function useEVMBumpEngine() {
-  const { address, isConnected } = useAccount();
+export function useEVMBumpEngine(chain: 'bsc' | 'ethereum') {
+  const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const chainId = useChainId();
-  const {
-    isBumping,
-    setBumping,
-    addTx,
-    updateTxStatus,
-    incrementBump,
-    incrementSuccess,
-  } = useBumpStore();
-  const { maxBumpAmount, cooldownMs, discordWebhook } = useSettingsStore();
-  const { notify } = useNotifications();
+  const { maxBumpAmount, cooldownMs, discordWebhookUrl } = useSettingsStore();
+  const addTx = useBumpStore((s) => s.addTransaction);
 
+  const [isBumping, setIsBumping] = useState(false);
+  const [autoBump, setAutoBump] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const getExplorerUrl = (txHash: string, chain: string) => {
-    if (chain === 'bsc') return `https://bscscan.com/tx/${txHash}`;
-    return `https://etherscan.io/tx/${txHash}`;
-  };
+  const bump = useCallback(async (amountEth: number) => {
+    if (!address || !walletClient) return;
+    const wei = parseEther(String(Math.min(amountEth, maxBumpAmount / 1e9)));
 
-  const sendBump = useCallback(
-    async (amountEth: number, chain: 'ethereum' | 'bsc') => {
-      if (!address || !isConnected || !walletClient) {
-        toast.error('Wallet not connected');
-        return;
-      }
+    try {
+      const tx = await walletClient.sendTransaction({
+        to: address,
+        value: wei,
+      });
 
-      const targetChainId = chain === 'bsc' ? bsc.id : mainnet.id;
-      if (chainId !== targetChainId) {
-        toast.error(`Switch to ${chain.toUpperCase()} network first`);
-        return;
-      }
-
-      const amountWei = parseEther(amountEth.toString());
-      const maxWei = BigInt(maxBumpAmount) * BigInt(10 ** 9);
-      if (amountWei > maxWei) {
-        toast.error(`Amount exceeds max limit`);
-        return;
-      }
-
-      const txId = crypto.randomUUID();
       addTx({
-        id: txId,
+        id: tx,
         chain,
         type: 'bump',
         amount: amountEth,
-        status: 'pending',
+        status: 'success',
+        txId: tx,
         timestamp: Date.now(),
         from: address,
         to: address,
       });
-      incrementBump();
 
-      try {
-        const txHash = await walletClient.sendTransaction({
-          to: address,
-          value: amountWei,
-          chain: chain === 'bsc' ? bsc : mainnet,
-        });
+      sendNotification('Bump Successful', `Sent ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'} on ${chain}`);
 
-        updateTxStatus(txId, 'success', txHash);
-        incrementSuccess();
-        toast.success(`Bump sent: ${txHash.slice(0, 10)}...`);
-
-        notify({
-          title: `${chain.toUpperCase()} Bump Successful`,
-          body: `Sent ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'}`,
-          tag: 'evm-bump-success',
-        });
-
-        if (discordWebhook) {
-          fetch(discordWebhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: 'ArtemisX-II Bot',
-              embeds: [{
-                title: `${chain.toUpperCase()} Bump Successful`,
-                description: `Sent ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'} self-transfer`,
-                color: chain === 'bsc' ? 0xeab308 : 0x3b82f6,
-                fields: [{ name: 'Transaction', value: getExplorerUrl(txHash, chain) }],
-                timestamp: new Date().toISOString(),
-              }],
-            }),
-          }).catch(() => {});
-        }
-      } catch (err: any) {
-        updateTxStatus(txId, 'failed');
-        toast.error(err.message || 'Bump failed');
-        notify({
-          title: `${chain.toUpperCase()} Bump Failed`,
-          body: err.message || 'Transaction failed',
-          tag: 'evm-bump-failed',
-        });
+      if (discordWebhookUrl) {
+        const explorer = chain === 'bsc' ? 'https://bscscan.com/tx/' : 'https://etherscan.io/tx/';
+        fetch(discordWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: `Bump successful: ${explorer}${tx}` }),
+        }).catch(() => {});
       }
-    },
-    [address, isConnected, walletClient, chainId, maxBumpAmount, addTx, updateTxStatus, incrementBump, incrementSuccess, discordWebhook, notify]
-  );
-
-  const startAutoBump = useCallback(
-    (amountEth: number, intervalSec: number, chain: 'ethereum' | 'bsc') => {
-      if (isBumping) return;
-      if (!address || !isConnected) {
-        toast.error('Connect wallet first');
-        return;
-      }
-
-      setBumping(true);
-      notify({
-        title: 'Auto-Bump Started',
-        body: `Sending ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'} every ${intervalSec}s`,
-        tag: 'evm-auto-bump-start',
+    } catch (err: any) {
+      addTx({
+        id: crypto.randomUUID(),
+        chain,
+        type: 'bump',
+        amount: amountEth,
+        status: 'failed',
+        timestamp: Date.now(),
+        from: address,
+        to: address,
       });
-      toast.success(`Auto-bump started: ${amountEth} ${chain === 'bsc' ? 'BNB' : 'ETH'} every ${intervalSec}s`);
-
-      sendBump(amountEth, chain);
-
-      intervalRef.current = setInterval(() => {
-        sendBump(amountEth, chain);
-      }, Math.max(intervalSec * 1000, cooldownMs));
-    },
-    [isBumping, address, isConnected, setBumping, sendBump, cooldownMs, notify]
-  );
-
-  const stopAutoBump = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+      sendNotification('Bump Failed', err.message || 'Transaction failed');
     }
-    setBumping(false);
-    notify({
-      title: 'Auto-Bump Stopped',
-      body: 'Manual stop triggered',
-      tag: 'evm-auto-bump-stop',
-    });
-    toast.success('Auto-bump stopped');
-  }, [setBumping, notify]);
+  }, [address, walletClient, chain, maxBumpAmount, addTx, discordWebhookUrl]);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+  const startAuto = useCallback((amountEth: number, intervalSec: number) => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setAutoBump(true);
+    sendNotification('Auto-Bump Started', `Sending every ${intervalSec}s`);
+    intervalRef.current = setInterval(() => {
+      bump(amountEth);
+    }, Math.max(intervalSec * 1000, cooldownMs));
+  }, [bump, cooldownMs]);
+
+  const stopAuto = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setAutoBump(false);
+    sendNotification('Auto-Bump Stopped', 'Manual stop triggered');
   }, []);
 
-  return { sendBump, startAutoBump, stopAutoBump, isBumping };
+  return { bump, isBumping, autoBump, startAuto, stopAuto };
 }

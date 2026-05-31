@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Header } from './Header';
-import { Sidebar } from './Sidebar';
-import { MobileSidebar } from './MobileSidebar';
+import Sidebar from './Sidebar';
+import MobileSidebar from './MobileSidebar';
 import { useTheme } from '../../hooks/useTheme';
 
 export const Shell: React.FC = () => {

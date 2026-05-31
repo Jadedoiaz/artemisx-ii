@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Bell, Wallet } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { WalletConnectButton } from '../wallet/WalletConnectButton';
+import WalletConnectButton from '../wallet/WalletConnectButton';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 interface HeaderProps {
