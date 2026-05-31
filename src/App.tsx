@@ -1,6 +1,5 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import UnifiedWalletProvider from './components/wallet/UnifiedWalletProvider';
 import Shell from './components/layout/Shell';
@@ -16,8 +15,7 @@ const Settings = lazy(() => import('./app/Settings'));
 
 // Preload Dashboard immediately (it's the home page)
 const dashboardPreload = import('./app/Dashboard');
-
-const queryClient = new QueryClient();
+void dashboardPreload; // Suppress unused warning — preloads in background
 
 // Loading fallback component
 function PageLoader() {
@@ -33,60 +31,58 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <UnifiedWalletProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Shell />}>
-              <Route path="/" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Dashboard />
-                </Suspense>
-              } />
-              <Route path="/bump" element={
-                <Suspense fallback={<PageLoader />}>
-                  <BumpCenter />
-                </Suspense>
-              } />
-              <Route path="/portfolio" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Portfolio />
-                </Suspense>
-              } />
-              <Route path="/nfts" element={
-                <Suspense fallback={<PageLoader />}>
-                  <NFTGallery />
-                </Suspense>
-              } />
-              <Route path="/activity" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Activity />
-                </Suspense>
-              } />
-              <Route path="/analytics" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Analytics />
-                </Suspense>
-              } />
-              <Route path="/settings" element={
-                <Suspense fallback={<PageLoader />}>
-                  <Settings />
-                </Suspense>
-              } />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#12121a',
-              color: '#f1f5f9',
-              border: '1px solid #1e293b',
-            },
-          }}
-        />
-      </UnifiedWalletProvider>
-    </QueryClientProvider>
+    <UnifiedWalletProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route path="/" element={
+              <Suspense fallback={<PageLoader />}>
+                <Dashboard />
+              </Suspense>
+            } />
+            <Route path="/bump" element={
+              <Suspense fallback={<PageLoader />}>
+                <BumpCenter />
+              </Suspense>
+            } />
+            <Route path="/portfolio" element={
+              <Suspense fallback={<PageLoader />}>
+                <Portfolio />
+              </Suspense>
+            } />
+            <Route path="/nfts" element={
+              <Suspense fallback={<PageLoader />}>
+                <NFTGallery />
+              </Suspense>
+            } />
+            <Route path="/activity" element={
+              <Suspense fallback={<PageLoader />}>
+                <Activity />
+              </Suspense>
+            } />
+            <Route path="/analytics" element={
+              <Suspense fallback={<PageLoader />}>
+                <Analytics />
+              </Suspense>
+            } />
+            <Route path="/settings" element={
+              <Suspense fallback={<PageLoader />}>
+                <Settings />
+              </Suspense>
+            } />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#12121a',
+            color: '#f1f5f9',
+            border: '1px solid #1e293b',
+          },
+        }}
+      />
+    </UnifiedWalletProvider>
   );
 }
