@@ -19,6 +19,7 @@ export default function SolanaWalletProvider({ children }: { children: React.Rea
     return clusterApiUrl(network);
   }, []);
 
+  // Only load specific adapters - much smaller bundle than @solana/wallet-adapter-wallets
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),

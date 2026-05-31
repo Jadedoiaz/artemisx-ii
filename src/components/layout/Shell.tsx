@@ -8,7 +8,7 @@ export default function Shell() {
       <Sidebar />
       <div className="flex-1 ml-64">
         <Header />
-        <main className="p-8">
+        <main className="p-8 min-h-[calc(100vh-4rem)]">
           <Outlet />
         </main>
       </div>

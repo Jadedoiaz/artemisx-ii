@@ -24,6 +24,17 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
+// Route component map for preloading
+const routePreloads: Record<string, () => Promise<any>> = {
+  '/': () => import('../../app/Dashboard'),
+  '/bump': () => import('../../app/BumpCenter'),
+  '/portfolio': () => import('../../app/Portfolio'),
+  '/nfts': () => import('../../app/NFTGallery'),
+  '/activity': () => import('../../app/Activity'),
+  '/analytics': () => import('../../app/Analytics'),
+  '/settings': () => import('../../app/Settings'),
+};
+
 export default function Sidebar() {
   const { publicKey, connected: solanaConnected } = useWallet();
   const { address: evmAddress, isConnected: evmConnected } = useAccount();
@@ -32,6 +43,13 @@ export default function Sidebar() {
   const isEVM = activeChain === 'ethereum' || activeChain === 'bsc';
   const showWallet = isEVM ? evmConnected : solanaConnected;
   const walletAddress = isEVM ? evmAddress : (publicKey?.toBase58() || null);
+
+  const handleMouseEnter = (to: string) => {
+    const preload = routePreloads[to];
+    if (preload) {
+      preload();
+    }
+  };
 
   return (
     <aside className="w-64 h-screen bg-surface border-r border-border flex flex-col fixed left-0 top-0 z-50">
@@ -60,6 +78,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            onMouseEnter={() => handleMouseEnter(item.to)}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -76,7 +95,7 @@ export default function Sidebar() {
       </nav>
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted text-center">
-          v2.3.0 Extended
+          v2.3.1 Optimized
         </div>
       </div>
     </aside>
