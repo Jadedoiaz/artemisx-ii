@@ -1,13 +1,13 @@
 import React from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect as useDisconnectEVM } from 'wagmi';
 import { Wallet, LogOut } from 'lucide-react';
 import { useBumpStore } from '../../stores/bumpStore';
 
 export default function WalletConnectButton() {
-  const { publicKey, disconnect: disconnectSolana, connect, wallets } = useWallet();
+  const { publicKey, disconnect: disconnectSolana, connect, select, wallets } = useWallet();
   const { address: evmAddress, isConnected: evmConnected } = useAccount();
-  const { disconnect: disconnectEVM } = useDisconnect();
+  const { disconnect: disconnectEVM } = useDisconnectEVM();
   const activeChain = useBumpStore((s) => s.activeChain);
   const setActiveChain = useBumpStore((s) => s.setActiveChain);
 
@@ -18,7 +18,10 @@ export default function WalletConnectButton() {
   const handleConnect = () => {
     if (isSolana) {
       const phantom = wallets.find((w) => w.adapter.name === 'Phantom');
-      if (phantom) connect(phantom.adapter.name);
+      if (phantom) {
+        select(phantom.adapter.name);
+        connect();
+      }
     }
   };
 
