@@ -1,34 +1,34 @@
-import React from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useAccount, useDisconnect as useDisconnectEVM } from 'wagmi';
-import { Wallet, LogOut } from 'lucide-react';
-import { useBumpStore } from '../../stores/bumpStore';
+import React from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useAccount, useDisconnect as useDisconnectEVM } from 'wagmi'
+import { Wallet, LogOut } from 'lucide-react'
+import { useBumpStore } from '../../stores/bumpStore'
 
 export default function WalletConnectButton() {
-  const { publicKey, disconnect: disconnectSolana, select, connect, wallets, connected: solanaConnected } = useWallet();
-  const { address: evmAddress, isConnected: evmConnected } = useAccount();
-  const { disconnect: disconnectEVM } = useDisconnectEVM();
-  const activeChain = useBumpStore((s) => s.activeChain);
-  const setActiveChain = useBumpStore((s) => s.setActiveChain);
+  const { publicKey, disconnect: disconnectSolana, select, connect, wallets, connected: solanaConnected } = useWallet()
+  const { address: evmAddress, isConnected: evmConnected } = useAccount()
+  const { disconnect: disconnectEVM } = useDisconnectEVM()
+  const activeChain = useBumpStore((s) => s.activeChain)
+  const setActiveChain = useBumpStore((s) => s.setActiveChain)
 
-  const isSolana = activeChain === 'solana';
-  const connected = isSolana ? solanaConnected : evmConnected;
-  const address = isSolana ? publicKey?.toBase58() : evmAddress;
+  const isSolana = activeChain === 'solana'
+  const connected = isSolana ? solanaConnected : evmConnected
+  const address = isSolana ? publicKey?.toBase58() : evmAddress
 
   const handleConnect = async () => {
     if (isSolana) {
-      const phantom = wallets.find((w) => w.adapter.name === 'Phantom');
+      const phantom = wallets.find((w) => w.adapter.name === 'Phantom')
       if (phantom) {
-        select(phantom.adapter.name);
-        await connect();
+        select(phantom.adapter.name)
+        await connect()
       }
     }
-  };
+  }
 
   const handleDisconnect = () => {
-    if (isSolana) disconnectSolana();
-    else disconnectEVM();
-  };
+    if (isSolana) disconnectSolana()
+    else disconnectEVM()
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -59,5 +59,5 @@ export default function WalletConnectButton() {
         </button>
       )}
     </div>
-  );
+  )
 }

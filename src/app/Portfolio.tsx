@@ -1,31 +1,31 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useAccount } from 'wagmi';
-import { useSettingsStore } from '../stores/settingsStore';
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useAccount } from 'wagmi'
+import { useSettingsStore } from '../stores/settingsStore'
 
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+}
 
 const item = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
+}
 
 export const Portfolio: React.FC = () => {
-  const { publicKey } = useWallet();
-  const { address: evmAddress } = useAccount();
-  const [tab, setTab] = useState<'solana' | 'bsc' | 'ethereum'>('solana');
-  const accentColor = useSettingsStore((s) => s.accentColor);
+  const { publicKey } = useWallet()
+  const { address: evmAddress } = useAccount()
+  const [tab, setTab] = useState<'solana' | 'bsc' | 'ethereum'>('solana')
+  const accentColor = useSettingsStore((s) => s.accentColor)
 
   const tokens = [
     { symbol: 'SOL', name: 'Solana', balance: 12.45, price: 142.30, change: 2.4 },
     { symbol: 'USDC', name: 'USD Coin', balance: 1500.00, price: 1.00, change: 0.0 },
     { symbol: 'BONK', name: 'Bonk', balance: 2500000, price: 0.000012, change: -5.2 },
-  ];
+  ]
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -94,5 +94,5 @@ export const Portfolio: React.FC = () => {
         </div>
       </motion.div>
     </motion.div>
-  );
-};
+  )
+}

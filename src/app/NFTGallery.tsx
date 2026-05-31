@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Grid3X3, List, ImageOff } from 'lucide-react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useNFTs } from '../hooks/useNFTs';
-import { useSettingsStore } from '../stores/settingsStore';
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Grid3X3, List, ImageOff } from 'lucide-react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useNFTs } from '../hooks/useNFTs'
+import { useSettingsStore } from '../stores/settingsStore'
 
 export const NFTGallery: React.FC = () => {
-  const { publicKey } = useWallet();
-  const { nfts, collections, loading, error } = useNFTs(publicKey?.toBase58());
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [filter, setFilter] = useState<string>('all');
-  const heliusApiKey = useSettingsStore((s) => s.heliusApiKey);
+  const { publicKey } = useWallet()
+  const { nfts, collections, loading, error } = useNFTs(publicKey?.toBase58())
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [filter, setFilter] = useState<string>('all')
+  const heliusApiKey = useSettingsStore((s) => s.heliusApiKey)
 
-  const filtered = filter === 'all' ? nfts : nfts.filter((n) => n.collection === filter);
+  const filtered = filter === 'all' ? nfts : nfts.filter((n) => n.collection === filter)
 
   if (!heliusApiKey) {
     return (
@@ -21,7 +21,7 @@ export const NFTGallery: React.FC = () => {
         <p className="text-lg font-medium text-slate-900 dark:text-white">Helius API Key Required</p>
         <p className="mt-1 text-sm">Add your Helius API key in Settings to load NFTs.</p>
       </div>
-    );
+    )
   }
 
   if (loading) {
@@ -31,7 +31,7 @@ export const NFTGallery: React.FC = () => {
           <div key={i} className="aspect-square animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
         ))}
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -40,7 +40,7 @@ export const NFTGallery: React.FC = () => {
         <p className="text-lg font-medium">Failed to load NFTs</p>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{error}</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -124,5 +124,5 @@ export const NFTGallery: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}

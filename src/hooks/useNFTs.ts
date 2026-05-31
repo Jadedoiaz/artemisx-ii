@@ -1,35 +1,35 @@
-import { useState, useEffect } from 'react';
-import { useSettingsStore } from '../stores/settingsStore';
+import { useState, useEffect } from 'react'
+import { useSettingsStore } from '../stores/settingsStore'
 
 export interface NFTItem {
-  id: string;
-  name: string;
-  image: string;
-  collection?: string;
-  attributes?: Record<string, string>;
-  listed?: boolean;
+  id: string
+  name: string
+  image: string
+  collection?: string
+  attributes?: Record<string, string>
+  listed?: boolean
 }
 
 export interface NFTResult {
-  nfts: NFTItem[];
-  collections: (string | undefined)[];
-  loading: boolean;
-  error: string | null;
+  nfts: NFTItem[]
+  collections: (string | undefined)[]
+  loading: boolean
+  error: string | null
 }
 
 export function useNFTs(walletAddress?: string): NFTResult {
-  const [nfts, setNfts] = useState<NFTItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const heliusApiKey = useSettingsStore((s) => s.heliusApiKey);
+  const [nfts, setNfts] = useState<NFTItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const heliusApiKey = useSettingsStore((s) => s.heliusApiKey)
 
   useEffect(() => {
     if (!walletAddress || !heliusApiKey) {
-      setNfts([]);
-      setError(null);
-      return;
+      setNfts([])
+      setError(null)
+      return
     }
-    setLoading(true);
+    setLoading(true)
     fetch(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -49,15 +49,15 @@ export function useNFTs(walletAddress?: string): NFTResult {
           collection: item.grouping?.[0]?.collection_metadata?.name || undefined,
           attributes: item.content?.metadata?.attributes || undefined,
           listed: item.ownership?.frozen || false,
-        }));
-        setNfts(items);
-        setError(null);
+        }))
+        setNfts(items)
+        setError(null)
       })
       .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [walletAddress, heliusApiKey]);
+      .finally(() => setLoading(false))
+  }, [walletAddress, heliusApiKey])
 
-  const collections = Array.from(new Set(nfts.map((n) => n.collection).filter(Boolean)));
+  const collections = Array.from(new Set(nfts.map((n) => n.collection).filter(Boolean)))
 
-  return { nfts, collections, loading, error };
+  return { nfts, collections, loading, error }
 }

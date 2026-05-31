@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Header } from './Header';
-import Sidebar from './Sidebar';
-import MobileSidebar from './MobileSidebar';
-import { useTheme } from '../../hooks/useTheme';
+import React, { useState, useEffect } from 'react'
+import { Outlet } from 'react-router-dom'
+import { Header } from './Header'
+import Sidebar from './Sidebar'
+import MobileSidebar from './MobileSidebar'
+import { useTheme } from '../../hooks/useTheme'
 
 export const Shell: React.FC = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { theme } = useTheme();
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { theme } = useTheme()
 
   useEffect(() => {
-    const root = document.documentElement;
+    const root = document.documentElement
     if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
+      root.classList.add('dark')
+      root.classList.remove('light')
     } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
+      root.classList.add('light')
+      root.classList.remove('dark')
     }
-  }, [theme]);
+  }, [theme])
 
   return (
-    <div className={`flex h-screen w-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100`}>
+    <div className="flex h-screen w-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <aside className="hidden lg:block">
         <Sidebar />
       </aside>
@@ -37,5 +37,5 @@ export const Shell: React.FC = () => {
         </main>
       </div>
     </div>
-  );
-};
+  )
+}

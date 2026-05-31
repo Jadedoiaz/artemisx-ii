@@ -1,28 +1,17 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-export interface Transaction {
-  id: string;
-  chain: string;
-  type: 'bump';
-  amount: number;
-  status: 'success' | 'pending' | 'failed';
-  txId?: string;
-  timestamp: number;
-  from: string;
-  to: string;
-}
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { Transaction } from '../types'
 
 export interface BumpStore {
-  transactions: Transaction[];
-  bumpCount: number;
-  successCount: number;
-  isBumping: boolean;
-  activeChain: string;
-  addTransaction: (tx: Transaction) => void;
-  clearTransactions: () => void;
-  setBumping: (val: boolean) => void;
-  setActiveChain: (chain: string) => void;
+  transactions: Transaction[]
+  bumpCount: number
+  successCount: number
+  isBumping: boolean
+  activeChain: string
+  addTransaction: (tx: Transaction) => void
+  clearTransactions: () => void
+  setBumping: (val: boolean) => void
+  setActiveChain: (chain: string) => void
 }
 
 export const useBumpStore = create<BumpStore>()(
@@ -44,7 +33,7 @@ export const useBumpStore = create<BumpStore>()(
       setActiveChain: (chain) => set({ activeChain: chain }),
     }),
     {
-      name: 'artemisx-bumps',
+      name: 'artemisx-bumps-v2',
     }
   )
-);
+)

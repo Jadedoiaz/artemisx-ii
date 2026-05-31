@@ -1,23 +1,23 @@
-import React, { useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
-import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack';
-import { clusterApiUrl } from '@solana/web3.js';
+import React, { useMemo } from 'react'
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare'
+import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack'
+import { clusterApiUrl } from '@solana/web3.js'
 
-import '@solana/wallet-adapter-react-ui/styles.css';
+import '@solana/wallet-adapter-react-ui/styles.css'
 
 interface Props {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export const SolanaWalletProvider: React.FC<Props> = ({ children }) => {
-  const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), []);
+  const endpoint = useMemo(() => clusterApiUrl('mainnet-beta'), [])
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter(), new BackpackWalletAdapter()],
     []
-  );
+  )
 
   return (
     <ConnectionProvider endpoint={endpoint}>
@@ -25,5 +25,5 @@ export const SolanaWalletProvider: React.FC<Props> = ({ children }) => {
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
-  );
-};
+  )
+}

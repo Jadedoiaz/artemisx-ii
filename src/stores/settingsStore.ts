@@ -1,23 +1,23 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export interface SettingsState {
-  heliusApiKey: string;
-  discordWebhookUrl: string;
-  solanaRpcUrl: string;
-  accentColor: string;
-  maxBumpAmount: number;
-  cooldownMs: number;
-  notificationsEnabled: boolean;
-  theme: 'dark' | 'light';
-  setHeliusApiKey: (key: string) => void;
-  setDiscordWebhookUrl: (url: string) => void;
-  setSolanaRpcUrl: (url: string) => void;
-  setAccentColor: (color: string) => void;
-  setMaxBumpAmount: (amount: number) => void;
-  setCooldownMs: (ms: number) => void;
-  setNotificationsEnabled: (enabled: boolean) => void;
-  setTheme: (theme: 'dark' | 'light') => void;
+  heliusApiKey: string
+  discordWebhookUrl: string
+  solanaRpcUrl: string
+  accentColor: string
+  maxBumpAmount: number
+  cooldownMs: number
+  notificationsEnabled: boolean
+  theme: 'dark' | 'light'
+  setHeliusApiKey: (key: string) => void
+  setDiscordWebhookUrl: (url: string) => void
+  setSolanaRpcUrl: (url: string) => void
+  setAccentColor: (color: string) => void
+  setMaxBumpAmount: (amount: number) => void
+  setCooldownMs: (ms: number) => void
+  setNotificationsEnabled: (enabled: boolean) => void
+  setTheme: (theme: 'dark' | 'light') => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -41,7 +41,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTheme: (theme) => set({ theme }),
     }),
     {
-      name: 'artemisx-settings',
+      name: 'artemisx-settings-v2',
     }
   )
-);
+)

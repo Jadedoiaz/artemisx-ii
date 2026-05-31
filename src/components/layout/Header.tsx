@@ -1,15 +1,15 @@
-import React from 'react';
-import { Menu, Bell, Wallet } from 'lucide-react';
-import { ThemeToggle } from '../ui/ThemeToggle';
-import WalletConnectButton from '../wallet/WalletConnectButton';
-import { useSettingsStore } from '../../stores/settingsStore';
+import React from 'react'
+import { Menu, Bell, Wallet } from 'lucide-react'
+import { ThemeToggle } from '../ui/ThemeToggle'
+import WalletConnectButton from '../wallet/WalletConnectButton'
+import { useSettingsStore } from '../../stores/settingsStore'
 
 interface HeaderProps {
-  onMenuClick: () => void;
+  onMenuClick: () => void
 }
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
-  const accentColor = useSettingsStore((s) => s.accentColor);
+  const accentColor = useSettingsStore((s) => s.accentColor)
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 lg:px-8">
@@ -40,5 +40,5 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}

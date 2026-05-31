@@ -1,35 +1,35 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useBumpStore } from '../stores/bumpStore';
+import React from 'react'
+import { motion } from 'framer-motion'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { useBumpStore } from '../stores/bumpStore'
 
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+}
 
 const item = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
+}
 
-const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444']
 
 export const Analytics: React.FC = () => {
-  const bumpCount = useBumpStore((s) => s.bumpCount);
-  const successCount = useBumpStore((s) => s.successCount);
-  const transactions = useBumpStore((s) => s.transactions);
+  const bumpCount = useBumpStore((s) => s.bumpCount)
+  const successCount = useBumpStore((s) => s.successCount)
+  const transactions = useBumpStore((s) => s.transactions)
 
   const chainData = [
     { name: 'Solana', value: transactions.filter((t) => t.chain === 'solana').length },
     { name: 'BSC', value: transactions.filter((t) => t.chain === 'bsc').length },
     { name: 'Ethereum', value: transactions.filter((t) => t.chain === 'ethereum').length },
-  ].filter((d) => d.value > 0);
+  ].filter((d) => d.value > 0)
 
   const statusData = [
     { name: 'Success', value: successCount },
     { name: 'Failed', value: bumpCount - successCount },
-  ];
+  ]
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
@@ -78,5 +78,5 @@ export const Analytics: React.FC = () => {
         </motion.div>
       </div>
     </motion.div>
-  );
-};
+  )
+}

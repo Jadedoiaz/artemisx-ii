@@ -1,6 +1,6 @@
-import { createConfig, http } from 'wagmi';
-import { bsc, mainnet } from 'wagmi/chains';
-import { injected, walletConnect } from 'wagmi/connectors';
+import { createConfig, http } from 'wagmi'
+import { bsc, mainnet } from 'wagmi/chains'
+import { injected, walletConnect } from 'wagmi/connectors'
 
 export const evmConfig = createConfig({
   chains: [bsc, mainnet],
@@ -20,4 +20,4 @@ export const evmConfig = createConfig({
     [bsc.id]: http('https://bsc-dataseed.binance.org'),
     [mainnet.id]: http('https://eth.llamarpc.com'),
   },
-});
+})

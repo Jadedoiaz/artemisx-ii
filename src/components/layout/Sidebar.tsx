@@ -1,7 +1,7 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Zap, Wallet, Image, Activity, BarChart3, Settings } from 'lucide-react';
-import { useBumpStore } from '../../stores/bumpStore';
+import React from 'react'
+import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Zap, Wallet, Image, Activity, BarChart3, Settings } from 'lucide-react'
+import { useBumpStore } from '../../stores/bumpStore'
 
 const links = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -11,10 +11,10 @@ const links = [
   { to: '/activity', icon: Activity, label: 'Activity' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/settings', icon: Settings, label: 'Settings' },
-];
+]
 
 export default function Sidebar() {
-  const activeChain = useBumpStore((s) => s.activeChain);
+  const activeChain = useBumpStore((s) => s.activeChain)
 
   return (
     <nav className="flex h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -32,7 +32,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-purple-500/10 text-purple-500 dark:text-purple-400'
+                  ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
               }`
             }
@@ -46,5 +46,5 @@ export default function Sidebar() {
         Chain: <span className="font-medium text-slate-900 uppercase dark:text-white">{activeChain}</span>
       </div>
     </nav>
-  );
+  )
 }

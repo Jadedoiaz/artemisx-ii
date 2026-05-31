@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Key, Webhook, Link2, Palette, Zap, Clock, Bell, Sun, Moon, Check } from 'lucide-react';
-import { useSettingsStore } from '../stores/settingsStore';
-import { useTheme } from '../hooks/useTheme';
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Key, Webhook, Link2, Palette, Zap, Bell, Sun, Moon, Check } from 'lucide-react'
+import { useSettingsStore } from '../stores/settingsStore'
+import { useTheme } from '../hooks/useTheme'
 
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+}
 
 const item = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
+}
 
 export const Settings: React.FC = () => {
   const {
@@ -31,10 +31,10 @@ export const Settings: React.FC = () => {
     setCooldownMs,
     setNotificationsEnabled,
     setTheme,
-  } = useSettingsStore();
+  } = useSettingsStore()
 
-  const { theme, toggle } = useTheme();
-  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { theme, toggle } = useTheme()
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   const colors = [
     { id: 'purple', class: 'bg-purple-500' },
@@ -42,22 +42,22 @@ export const Settings: React.FC = () => {
     { id: 'emerald', class: 'bg-emerald-500' },
     { id: 'rose', class: 'bg-rose-500' },
     { id: 'amber', class: 'bg-amber-500' },
-  ];
+  ]
 
   const handleTestWebhook = async () => {
-    if (!discordWebhookUrl) return;
+    if (!discordWebhookUrl) return
     try {
       const res = await fetch(discordWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: 'Artemis X-II webhook test successful.' }),
-      });
-      setTestStatus(res.ok ? 'success' : 'error');
+      })
+      setTestStatus(res.ok ? 'success' : 'error')
     } catch {
-      setTestStatus('error');
+      setTestStatus('error')
     }
-    setTimeout(() => setTestStatus('idle'), 3000);
-  };
+    setTimeout(() => setTestStatus('idle'), 3000)
+  }
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="mx-auto max-w-3xl space-y-6">
@@ -76,7 +76,7 @@ export const Settings: React.FC = () => {
             <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400">Theme</label>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => { setTheme('dark'); applyTheme('dark'); }}
+                onClick={() => { setTheme('dark'); applyTheme('dark') }}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                   theme === 'dark'
                     ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
@@ -86,7 +86,7 @@ export const Settings: React.FC = () => {
                 <Moon size={16} /> Dark
               </button>
               <button
-                onClick={() => { setTheme('light'); applyTheme('light'); }}
+                onClick={() => { setTheme('light'); applyTheme('light') }}
                 className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors ${
                   theme === 'light'
                     ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
@@ -226,17 +226,17 @@ export const Settings: React.FC = () => {
         </div>
       </motion.div>
     </motion.div>
-  );
-};
+  )
+}
 
 function applyTheme(t: 'dark' | 'light') {
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement;
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
   if (t === 'dark') {
-    root.classList.add('dark');
-    root.classList.remove('light');
+    root.classList.add('dark')
+    root.classList.remove('light')
   } else {
-    root.classList.add('light');
-    root.classList.remove('dark');
+    root.classList.add('light')
+    root.classList.remove('dark')
   }
 }

@@ -1,10 +1,10 @@
-import React from 'react';
-import { WagmiProvider } from 'wagmi';
-import { evmConfig } from '../../lib/evm';
-import { SolanaWalletProvider } from './SolanaWalletProvider';
+import React from 'react'
+import { WagmiProvider } from 'wagmi'
+import { evmConfig } from '../../lib/evm'
+import { SolanaWalletProvider } from './SolanaWalletProvider'
 
 interface Props {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export const UnifiedWalletProvider: React.FC<Props> = ({ children }) => {
@@ -14,5 +14,5 @@ export const UnifiedWalletProvider: React.FC<Props> = ({ children }) => {
         {children}
       </SolanaWalletProvider>
     </WagmiProvider>
-  );
-};
+  )
+}
