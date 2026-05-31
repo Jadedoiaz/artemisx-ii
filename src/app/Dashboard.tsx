@@ -2,6 +2,7 @@ import { motion, Variants } from 'framer-motion';
 import { useWalletData } from '../hooks/useWalletData';
 import { useEVMWalletData } from '../hooks/useEVMWalletData';
 import { useTokenPrices } from '../hooks/useTokenPrices';
+import { useEVMPrices } from '../hooks/useEVMPrices';
 import { useBumpStore } from '../stores/bumpStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
@@ -51,36 +52,47 @@ function StatCard({ icon: Icon, label, value, color, loading }: { icon: any; lab
 export default function Dashboard() {
   const { bumpCount, successCount, isBumping } = useBumpStore();
 
+  // Solana
   const { connected: solanaConnected, solBalance, tokens, loading: solanaLoading, refetch: refetchSolana } = useWalletData();
   const { publicKey } = useWallet();
 
+  // EVM
   const { isConnected: evmConnected, balances: evmBalances } = useEVMWalletData();
   const { address: evmAccount } = useAccount();
 
+  // Prices
   const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
-  const { prices, loading: pricesLoading, refetch: refetchPrices } = useTokenPrices(allMints);
+  const { prices: solPrices, loading: solPricesLoading, refetch: refetchSolPrices } = useTokenPrices(allMints);
+  const { prices: evmPrices, loading: evmPricesLoading, refetch: refetchEVMPrices } = useEVMPrices(['ethereum', 'bsc']);
 
-  const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 0;
-  const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
+  const solPrice = solPrices['So11111111111111111111111111111111111111112']?.current_price || 0;
+  const solChange = solPrices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
 
+  // Real EVM prices
+  const ethPrice = evmPrices['ethereum']?.current_price || 0;
+  const ethChange = evmPrices['ethereum']?.price_change_percentage_24h || 0;
+  const bnbPrice = evmPrices['bsc']?.current_price || 0;
+  const bnbChange = evmPrices['bsc']?.price_change_percentage_24h || 0;
+
+  // Calculate totals per chain
   const solanaValue = solBalance * solPrice + tokens.reduce((acc, t) => {
-    const price = prices[t.mint]?.current_price;
+    const price = solPrices[t.mint]?.current_price;
     return acc + (price ? t.balance * price : 0);
   }, 0);
 
   const ethBalance = evmBalances.find(b => b.chain === 'ethereum')?.balance || 0;
   const bscBalance = evmBalances.find(b => b.chain === 'bsc')?.balance || 0;
-  const ethPrice = 3500;
-  const bnbPrice = 600;
 
   const totalValue = solanaValue + (ethBalance * ethPrice) + (bscBalance * bnbPrice);
+  const totalWallets = (solanaConnected ? 1 : 0) + (evmConnected ? 1 : 0);
 
-  const isLoading = solanaLoading || pricesLoading;
+  const isLoading = solanaLoading || solPricesLoading || evmPricesLoading;
   const successRate = bumpCount > 0 ? ((successCount / bumpCount) * 100).toFixed(1) + '%' : '0%';
 
   const handleRefresh = () => {
     refetchSolana();
-    refetchPrices();
+    refetchSolPrices();
+    refetchEVMPrices();
   };
 
   return (
@@ -95,7 +107,7 @@ export default function Dashboard() {
           <h1 className="text-xl md:text-2xl font-bold">Dashboard</h1>
           <p className="text-muted mt-1 text-sm">Multi-chain overview</p>
         </div>
-        {solanaConnected && (
+        {(solanaConnected || evmConnected) && (
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -133,7 +145,7 @@ export default function Dashboard() {
           label="Portfolio Value"
           value={totalValue > 0 ? `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
           color="bg-warning/10 text-warning"
-          loading={isLoading && solanaConnected}
+          loading={isLoading && (solanaConnected || evmConnected)}
         />
       </div>
 
@@ -154,6 +166,12 @@ export default function Dashboard() {
           </div>
           <p className="text-lg font-bold">{solanaConnected ? `${solBalance.toFixed(4)} SOL` : '—'}</p>
           <p className="text-xs text-muted">{solanaConnected && solPrice > 0 ? `$${(solBalance * solPrice).toFixed(2)}` : ''}</p>
+          {solanaConnected && solChange !== 0 && (
+            <p className={`text-xs mt-1 flex items-center gap-1 ${solChange >= 0 ? 'text-success' : 'text-danger'}`}>
+              {solChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {Math.abs(solChange).toFixed(2)}% (24h)
+            </p>
+          )}
         </motion.div>
 
         <motion.div 
@@ -170,7 +188,13 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-lg font-bold">{evmConnected ? `${bscBalance.toFixed(6)} BNB` : '—'}</p>
-          <p className="text-xs text-muted">{evmConnected ? `$${(bscBalance * bnbPrice).toFixed(2)}` : ''}</p>
+          <p className="text-xs text-muted">{evmConnected && bnbPrice > 0 ? `$${(bscBalance * bnbPrice).toFixed(2)}` : ''}</p>
+          {evmConnected && bnbChange !== 0 && (
+            <p className={`text-xs mt-1 flex items-center gap-1 ${bnbChange >= 0 ? 'text-success' : 'text-danger'}`}>
+              {bnbChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {Math.abs(bnbChange).toFixed(2)}% (24h)
+            </p>
+          )}
         </motion.div>
 
         <motion.div 
@@ -187,7 +211,13 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-lg font-bold">{evmConnected ? `${ethBalance.toFixed(6)} ETH` : '—'}</p>
-          <p className="text-xs text-muted">{evmConnected ? `$${(ethBalance * ethPrice).toFixed(2)}` : ''}</p>
+          <p className="text-xs text-muted">{evmConnected && ethPrice > 0 ? `$${(ethBalance * ethPrice).toFixed(2)}` : ''}</p>
+          {evmConnected && ethChange !== 0 && (
+            <p className={`text-xs mt-1 flex items-center gap-1 ${ethChange >= 0 ? 'text-success' : 'text-danger'}`}>
+              {ethChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {Math.abs(ethChange).toFixed(2)}% (24h)
+            </p>
+          )}
         </motion.div>
       </motion.div>
 

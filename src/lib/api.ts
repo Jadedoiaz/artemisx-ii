@@ -261,3 +261,63 @@ export async function fetchNFTCollections(
 
   return Array.from(collectionMap.values());
 }
+
+
+// EVM CoinGecko IDs
+const EVM_IDS: Record<string, string> = {
+  'ethereum': 'ethereum',
+  'eth': 'ethereum',
+  'bsc': 'binancecoin',
+  'bnb': 'binancecoin',
+};
+
+export async function fetchEVMPrices(chains: string[]): Promise<TokenPrice[]> {
+  const ids = chains
+    .map(c => EVM_IDS[c.toLowerCase()])
+    .filter((id): id is string => !!id);
+
+  if (ids.length === 0) return [];
+
+  // Check cache
+  const now = Date.now();
+  const cached = ids.map(id => priceCache.get(id)).filter(Boolean);
+  if (cached.length === ids.length && cached.every(c => c && now - c.timestamp < CACHE_TTL)) {
+    return cached.map((c, i) => ({
+      id: ids[i],
+      symbol: ids[i] === 'ethereum' ? 'ETH' : 'BNB',
+      name: ids[i] === 'ethereum' ? 'Ethereum' : 'BNB',
+      current_price: c!.price,
+      price_change_percentage_24h: c!.change24h,
+    }));
+  }
+
+  try {
+    const response = await fetch(
+      `${COINGECKO_API}/coins/markets?vs_currency=usd&ids=${ids.join(',')}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`
+    );
+    if (!response.ok) throw new Error('CoinGecko rate limit');
+    const data: TokenPrice[] = await response.json();
+
+    data.forEach(token => {
+      priceCache.set(token.id, {
+        price: token.current_price,
+        change24h: token.price_change_percentage_24h || 0,
+        timestamp: now,
+      });
+    });
+
+    return data;
+  } catch (err) {
+    console.error('EVM price fetch failed:', err);
+    return ids.map((id, i) => {
+      const cached = priceCache.get(id);
+      return cached ? {
+        id,
+        symbol: id === 'ethereum' ? 'ETH' : 'BNB',
+        name: id === 'ethereum' ? 'Ethereum' : 'BNB',
+        current_price: cached.price,
+        price_change_percentage_24h: cached.change24h,
+      } : null;
+    }).filter((item): item is TokenPrice => item !== null);
+  }
+}

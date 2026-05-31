@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWalletData } from '../hooks/useWalletData';
 import { useEVMWalletData } from '../hooks/useEVMWalletData';
 import { useTokenPrices } from '../hooks/useTokenPrices';
+import { useEVMPrices } from '../hooks/useEVMPrices';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount } from 'wagmi';
 import { Wallet, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react';
@@ -21,36 +22,41 @@ export default function Portfolio() {
 
   // Prices
   const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
-  const { prices, loading: pricesLoading, refetch: refetchPrices } = useTokenPrices(allMints);
+  const { prices: solPrices, loading: solPricesLoading, refetch: refetchSolPrices } = useTokenPrices(allMints);
+  const { prices: evmPrices, loading: evmPricesLoading, refetch: refetchEVMPrices } = useEVMPrices(['ethereum', 'bsc']);
 
-  const solPrice = prices['So11111111111111111111111111111111111111112']?.current_price || 0;
-  const solChange = prices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
+  const solPrice = solPrices['So11111111111111111111111111111111111111112']?.current_price || 0;
+  const solChange = solPrices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
+
+  // Real EVM prices
+  const ethPrice = evmPrices['ethereum']?.current_price || 0;
+  const ethChange = evmPrices['ethereum']?.price_change_percentage_24h || 0;
+  const bnbPrice = evmPrices['bsc']?.current_price || 0;
+  const bnbChange = evmPrices['bsc']?.price_change_percentage_24h || 0;
 
   // Calculate totals per chain
   const solanaValue = solBalance * solPrice + tokens.reduce((acc, t) => {
-    const price = prices[t.mint]?.current_price;
+    const price = solPrices[t.mint]?.current_price;
     return acc + (price ? t.balance * price : 0);
   }, 0);
 
   const ethBalance = evmBalances.find(b => b.chain === 'ethereum')?.balance || 0;
   const bscBalance = evmBalances.find(b => b.chain === 'bsc')?.balance || 0;
-  // Mock prices for ETH/BNB until CoinGecko integration
-  const ethPrice = 3500; // Placeholder - would fetch from CoinGecko
-  const bnbPrice = 600;  // Placeholder
 
   const totalValue = selectedChain === 'solana' ? solanaValue 
     : selectedChain === 'ethereum' ? ethBalance * ethPrice 
     : selectedChain === 'bsc' ? bscBalance * bnbPrice 
     : solanaValue + (ethBalance * ethPrice) + (bscBalance * bnbPrice);
 
-  const isLoading = solanaLoading || pricesLoading;
+  const isLoading = solanaLoading || solPricesLoading || evmPricesLoading;
   const connected = selectedChain === 'solana' ? solanaConnected : selectedChain === 'ethereum' || selectedChain === 'bsc' ? evmConnected : (solanaConnected || evmConnected);
 
   const handleRefresh = () => {
     if (selectedChain === 'solana') {
       refetchSolana();
-      refetchPrices();
+      refetchSolPrices();
     }
+    refetchEVMPrices();
   };
 
   return (
@@ -102,6 +108,18 @@ export default function Portfolio() {
                 {Math.abs(solChange).toFixed(2)}% (24h)
               </p>
             )}
+            {selectedChain === 'ethereum' && evmConnected && (
+              <p className={`text-sm mt-1 flex items-center gap-1 ${ethChange >= 0 ? 'text-success' : 'text-danger'}`}>
+                {ethChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {Math.abs(ethChange).toFixed(2)}% (24h)
+              </p>
+            )}
+            {selectedChain === 'bsc' && evmConnected && (
+              <p className={`text-sm mt-1 flex items-center gap-1 ${bnbChange >= 0 ? 'text-success' : 'text-danger'}`}>
+                {bnbChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {Math.abs(bnbChange).toFixed(2)}% (24h)
+              </p>
+            )}
           </div>
           <div className="text-sm text-muted">
             {selectedChain === 'solana' && publicKey && (
@@ -138,7 +156,7 @@ export default function Portfolio() {
                     </div>
                   </td>
                   <td className="py-4 font-mono text-sm">{solBalance.toFixed(4)}</td>
-                  <td className="py-4 font-mono text-sm">{pricesLoading ? '...' : solPrice > 0 ? `$${solPrice.toFixed(2)}` : '—'}</td>
+                  <td className="py-4 font-mono text-sm">{solPricesLoading ? '...' : solPrice > 0 ? `$${solPrice.toFixed(2)}` : '—'}</td>
                   <td className="py-4 font-mono text-sm">${(solBalance * solPrice).toFixed(2)}</td>
                   <td className="py-4">
                     <span className={`flex items-center gap-1 text-sm ${solChange >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -148,8 +166,8 @@ export default function Portfolio() {
                   </td>
                 </tr>
                 {tokens.map((token) => {
-                  const price = prices[token.mint]?.current_price;
-                  const change = prices[token.mint]?.price_change_percentage_24h || 0;
+                  const price = solPrices[token.mint]?.current_price;
+                  const change = solPrices[token.mint]?.price_change_percentage_24h || 0;
                   return (
                     <tr key={token.mint} className="border-b border-border/50 last:border-0">
                       <td className="py-4">
@@ -162,7 +180,7 @@ export default function Portfolio() {
                         </div>
                       </td>
                       <td className="py-4 font-mono text-sm">{token.balance.toLocaleString()}</td>
-                      <td className="py-4 font-mono text-sm">{pricesLoading ? '...' : price ? `$${price < 0.01 ? price.toExponential(2) : price.toFixed(4)}` : '—'}</td>
+                      <td className="py-4 font-mono text-sm">{solPricesLoading ? '...' : price ? `$${price < 0.01 ? price.toExponential(2) : price.toFixed(4)}` : '—'}</td>
                       <td className="py-4 font-mono text-sm">{price ? `$${(token.balance * price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}</td>
                       <td className="py-4">
                         {price ? (
@@ -195,6 +213,12 @@ export default function Portfolio() {
                 <div className="text-right">
                   <p className="font-mono text-sm">{ethBalance.toFixed(6)} ETH</p>
                   <p className="text-xs text-muted">${(ethBalance * ethPrice).toFixed(2)}</p>
+                  {ethChange !== 0 && (
+                    <p className={`text-xs flex items-center justify-end gap-1 mt-1 ${ethChange >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {ethChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {Math.abs(ethChange).toFixed(2)}%
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -210,6 +234,12 @@ export default function Portfolio() {
                 <div className="text-right">
                   <p className="font-mono text-sm">{bscBalance.toFixed(6)} BNB</p>
                   <p className="text-xs text-muted">${(bscBalance * bnbPrice).toFixed(2)}</p>
+                  {bnbChange !== 0 && (
+                    <p className={`text-xs flex items-center justify-end gap-1 mt-1 ${bnbChange >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {bnbChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {Math.abs(bnbChange).toFixed(2)}%
+                    </p>
+                  )}
                 </div>
               </div>
             )}
