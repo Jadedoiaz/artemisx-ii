@@ -3,6 +3,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useAccount, useDisconnect as useDisconnectEVM } from 'wagmi';
 import { Wallet, LogOut, ChevronDown } from 'lucide-react';
 import { useBumpStore } from '../../stores/bumpStore';
+import { isMobileDevice, getPhantomDeepLink, getMetaMaskDeepLink } from '../../lib/evm';
 import WalletSelectorModal from './WalletSelectorModal';
 
 export default function WalletConnectButton() {
@@ -15,6 +16,7 @@ export default function WalletConnectButton() {
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   const isSolana = activeChain === 'solana';
+  const isMobile = isMobileDevice();
 
   // FIX: Check both connected flag AND actual address/publicKey exists
   const isSolanaReallyConnected = solanaConnected && !!publicKey;
@@ -56,12 +58,21 @@ export default function WalletConnectButton() {
           </button>
         ) : (
           <button
-            onClick={() => setShowWalletModal(true)}
+            onClick={() => {
+              if (isMobileDevice()) {
+                if (isSolana) {
+                  window.location.href = getPhantomDeepLink();
+                } else {
+                  window.location.href = getMetaMaskDeepLink();
+                }
+                return;
+              }
+              setShowWalletModal(true);
+            }}
             className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover active:scale-95"
           >
             <Wallet size={16} />
-            <span className="hidden sm:inline">Connect Wallet</span>
-            <span className="sm:hidden">Connect</span>
+            {isMobile ? 'Open Wallet App' : 'Connect Wallet'}
           </button>
         )}
       </div>
