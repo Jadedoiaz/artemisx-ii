@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useWalletData } from '../hooks/useWalletData';
 import { useEVMWalletData } from '../hooks/useEVMWalletData';
 import { useTokenPrices } from '../hooks/useTokenPrices';
@@ -21,9 +21,13 @@ export default function Portfolio() {
   const { address: evmAccount } = useAccount();
 
   // Prices
-  const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
+  const allMints = useMemo(() =>
+    ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)],
+    [tokens]
+  );
   const { prices: solPrices, loading: solPricesLoading, refetch: refetchSolPrices } = useTokenPrices(allMints);
-  const { prices: evmPrices, loading: evmPricesLoading, refetch: refetchEVMPrices } = useEVMPrices(['ethereum', 'bsc']);
+  const evmChains = useMemo(() => ['ethereum', 'bsc'], []);
+  const { prices: evmPrices, loading: evmPricesLoading, refetch: refetchEVMPrices } = useEVMPrices(evmChains);
 
   const solPrice = solPrices['So11111111111111111111111111111111111111112']?.current_price || 0;
   const solChange = solPrices['So11111111111111111111111111111111111111112']?.price_change_percentage_24h || 0;
