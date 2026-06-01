@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { useWalletData } from '../hooks/useWalletData';
 import { useEVMWalletData } from '../hooks/useEVMWalletData';
@@ -61,7 +62,10 @@ export default function Dashboard() {
   const { address: evmAccount } = useAccount();
 
   // Prices
-  const allMints = ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)];
+  const allMints = useMemo(() =>
+    ['So11111111111111111111111111111111111111112', ...tokens.map(t => t.mint)],
+    [tokens]
+  );
   const { prices: solPrices, loading: solPricesLoading, refetch: refetchSolPrices } = useTokenPrices(allMints);
   const { prices: evmPrices, loading: evmPricesLoading, refetch: refetchEVMPrices } = useEVMPrices(['ethereum', 'bsc']);
 
