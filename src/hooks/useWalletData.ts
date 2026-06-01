@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useWalletStore } from '../stores/walletStore';
@@ -14,25 +14,36 @@ export interface TokenBalance {
 }
 
 export function useWalletData() {
-  const { publicKey, connected, wallet } = useWallet();
-  const { addWallet, updateBalance, setConnected } = useWalletStore();
-  const [solBalance, setSolBalance] = useState<number>(0);
+  const { publicKey, connected } = useWallet();
+  const addWallet = useWalletStore((s) => s.addWallet);
+  const setConnected = useWalletStore((s) => s.setConnected);
+  
+  const [solBalance, setSolBalance] = useState(0);
   const [tokens, setTokens] = useState<TokenBalance[]>([]);
   const [loading, setLoading] = useState(false);
-
+  
   const heliusKey = import.meta.env.VITE_HELIUS_API_KEY || '';
+  const connectionRef = useRef<Connection | null>(null);
+  const isFetchingRef = useRef(false);
+
+  // Create connection once per key change, not on every render
+  useEffect(() => {
+    const rpcUrl = heliusKey
+      ? `https://mainnet.helius-rpc.com/?api-key=${heliusKey}`
+      : 'https://api.mainnet-beta.solana.com';
+    connectionRef.current = new Connection(rpcUrl, 'confirmed');
+  }, [heliusKey]);
 
   const fetchBalances = useCallback(async () => {
-    if (!publicKey || !connected) return;
-
+    if (!publicKey || !connected || !connectionRef.current) return;
+    if (isFetchingRef.current) return; // Prevent overlapping fetches
+    
+    isFetchingRef.current = true;
     setLoading(true);
+    
     try {
-      const rpcUrl = heliusKey
-        ? `https://mainnet.helius-rpc.com/?api-key=${heliusKey}`
-        : 'https://api.mainnet-beta.solana.com';
-
-      const connection = new Connection(rpcUrl, 'confirmed');
-
+      const connection = connectionRef.current;
+      
       // Fetch SOL balance
       const solLamports = await connection.getBalance(publicKey);
       const sol = solLamports / LAMPORTS_PER_SOL;
@@ -76,21 +87,23 @@ export function useWalletData() {
       toast.error('Failed to fetch wallet balances');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [publicKey, connected, heliusKey, addWallet, setConnected]);
+  }, [publicKey, connected, addWallet, setConnected]);
 
+  // Fetch once on mount/connection, then every 30s
   useEffect(() => {
-    if (connected && publicKey) {
-      fetchBalances();
-      const interval = setInterval(fetchBalances, 30000); // Refresh every 30s
-      return () => clearInterval(interval);
-    }
+    if (!connected || !publicKey) return;
+    
+    fetchBalances();
+    const interval = setInterval(fetchBalances, 30000);
+    
+    return () => clearInterval(interval);
   }, [connected, publicKey, fetchBalances]);
 
   return {
     publicKey,
     connected,
-    wallet,
     solBalance,
     tokens,
     loading,
