@@ -11,12 +11,14 @@ export default function Settings() {
     discordWebhook,
     heliusKey,
     solanaRpc,
+    notificationsEnabled,
     setAccentColor,
     setMaxBump,
     setCooldown,
     setWebhook,
     setHeliusKey,
     setSolanaRpc,
+    setNotificationsEnabled,
   } = useSettingsStore();
 
   const { supported, permission, enabled, enable, disable } = useNotifications();
@@ -123,76 +125,46 @@ export default function Settings() {
         </div>
 
         {/* Push Notifications */}
-        <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Bell size={18} className="text-accent" />
-            <h3 className="font-semibold">Push Notifications</h3>
-          </div>
-
-          {!supported && (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-warning">
-                <BellOff size={16} />
-                <span className="text-sm font-medium">Not Supported</span>
-              </div>
-              <p className="text-xs text-muted mt-1">
-                Your browser does not support push notifications.
-              </p>
+        {supported && (
+          <div className="bg-surface border border-border rounded-xl p-4 md:p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Bell size={18} className="text-accent" />
+              <h2 className="font-semibold">Push Notifications</h2>
             </div>
-          )}
 
-          {supported && permission === 'denied' && (
-            <div className="bg-danger/10 border border-danger/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-danger">
-                <BellOff size={16} />
-                <span className="text-sm font-medium">Permission Denied</span>
+            {permission === 'denied' && (
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
+                <p className="text-warning text-sm font-medium">Permission Denied</p>
+                <p className="text-muted text-xs mt-1">Notifications were blocked. Enable them in your browser settings to use this feature.</p>
               </div>
-              <p className="text-xs text-muted mt-1">
-                Notifications were blocked. Enable them in your browser settings to use this feature.
-              </p>
-            </div>
-          )}
+            )}
 
-          {supported && permission !== 'denied' && (
-            <div className="space-y-3">
+            {permission !== 'denied' && (
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Enable Notifications</p>
-                  <p className="text-xs text-muted">
-                    Get alerts when bumps complete, fail, or auto-bump stops
-                  </p>
+                  <p className="text-xs text-muted">Get alerts when bumps complete, fail, or auto-bump stops</p>
                 </div>
                 <button
-                  onClick={() => {
-                    if (enabled) {
-                      disable();
-                    } else {
-                      enable();
-                    }
-                  }}
-                  className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
-                    enabled
-                      ? 'bg-success/10 text-success border border-success/30 hover:bg-success/20'
-                      : 'bg-surface-highlight border border-border text-muted hover:text-white hover:border-accent'
-                  )}
+                  onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    notificationsEnabled ? 'bg-accent' : 'bg-muted'
+                  }`}
                 >
-                  {enabled ? <BellRing size={16} /> : <Bell size={16} />}
-                  {enabled ? 'Enabled' : 'Enable'}
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                      notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
+            )}
 
-              {enabled && (
-                <div className="bg-success/10 border border-success/20 rounded-lg p-3">
-                  <p className="text-xs text-success flex items-center gap-2">
-                    <BellRing size={14} />
-                    Notifications active. You will receive alerts for all bump events.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {notificationsEnabled && (
+              <p className="text-xs text-success mt-3">Notifications active. You will receive alerts for all bump events.</p>
+            )}
+          </div>
+        )}
 
         {/* Webhook Test */}
         <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
